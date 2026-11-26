@@ -183,7 +183,10 @@ async function enterRoom(code, name) {
 
  await refreshPlayers();
 
- if (subscription) await subscription.unsubscribe();
+ if (subscription) {
+ subscription();
+ subscription = null;
+}
 
  subscription = await realtime.subscribe(
   Appwrite.Channel.tablesdb(CFG.database).table(CFG.players).row(),
