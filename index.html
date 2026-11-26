@@ -188,7 +188,7 @@ async function enterRoom(code,name){
 
   if(mine){
    myPlayerRow=mine.$id;
-   ready=Boolean(mine.is_ready);
+   ready=Boolean(mine.isReady);
   }else{
    const created=await db.createRow({
     databaseId:CFG.database,
@@ -198,8 +198,8 @@ async function enterRoom(code,name){
      roomcode:code,
      PlayerName:name,
      UserId:userId,
-     is_ready:false,
-     is_alive:true
+     isReady:false,
+     isAlive:true
     }
    });
 
@@ -260,7 +260,7 @@ async function refreshPlayers(){
   members.forEach(player=>{
    const li=document.createElement("li");
    li.textContent=player.PlayerName+
-    (player.is_ready?" — آماده":" — در انتظار");
+    (player.isReady?" — آماده":" — در انتظار");
    list.appendChild(li);
   });
 
@@ -288,7 +288,7 @@ async function setReady(){
    databaseId:CFG.database,
    tableId:CFG.players,
    rowId:myPlayerRow,
-   data:{is_ready:newReady}
+   data:{isReady:newReady}
   });
 
   ready=newReady;
