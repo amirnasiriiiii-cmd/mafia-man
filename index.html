@@ -196,7 +196,7 @@ async function enterRoom(code,name){
     rowId:Appwrite.ID.unique(),
     data:{
      roomcode:code,
-     player_name:name,
+     PlayerName:name,
      UserId:userId,
      is_ready:false,
      is_alive:true
@@ -259,7 +259,7 @@ async function refreshPlayers(){
 
   members.forEach(player=>{
    const li=document.createElement("li");
-   li.textContent=player.player_name+
+   li.textContent=player.PlayerName+
     (player.is_ready?" — آماده":" — در انتظار");
    list.appendChild(li);
   });
