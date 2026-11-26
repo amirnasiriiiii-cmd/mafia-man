@@ -16,7 +16,6 @@ input,button{width:100%;padding:14px;margin:7px 0;border:0;border-radius:9px;fon
 input{background:#30394e;color:white}
 button{background:#d5a638;color:#171717;font-weight:bold;cursor:pointer}
 button.secondary{background:#46516b;color:white}
-button:disabled{opacity:.5}
 #players{padding:0;list-style:none}
 #players li{background:#30394e;padding:12px;margin:7px 0;border-radius:8px}
 .small{color:#aeb8ca;font-size:13px}
@@ -102,6 +101,7 @@ async function stopSubscription(){
  }
 }
 
+/* ساخت اتاق */
 async function createRoom(){
  try{
   const name=getName();
@@ -133,6 +133,7 @@ async function createRoom(){
  }
 }
 
+/* ورود به اتاق */
 async function joinRoom(){
  try{
   const name=getName();
@@ -167,6 +168,7 @@ async function joinRoom(){
  }
 }
 
+/* ثبت بازیکن */
 async function enterRoom(code,name){
  try{
   await stopSubscription();
@@ -177,7 +179,7 @@ async function enterRoom(code,name){
    tableId:CFG.players,
    queries:[
     Appwrite.Query.equal("roomcode",code),
-    Appwrite.Query.equal("userId",userId),
+    Appwrite.Query.equal("UserId",userId),
     Appwrite.Query.limit(1)
    ]
   });
@@ -195,7 +197,7 @@ async function enterRoom(code,name){
     data:{
      roomcode:code,
      player_name:name,
-     userId:userId,
+     UserId:userId,
      is_ready:false,
      is_alive:true
     }
@@ -211,8 +213,8 @@ async function enterRoom(code,name){
 
   document.getElementById("hostLabel").textContent=
    currentHost===userId
-    ?"شما میزبان این اتاق هستید."
-    :"شما بازیکن این اتاق هستید.";
+   ?"شما میزبان این اتاق هستید."
+   :"شما بازیکن این اتاق هستید.";
 
   document.getElementById("readyButton").textContent=
    ready?"لغو آمادگی":"آماده‌ام";
@@ -230,13 +232,14 @@ async function enterRoom(code,name){
    }
   );
 
-  say("اتصال برقرار شد. منتظر بازیکنان دیگر هستیم.");
+  say("وارد اتاق شدی. منتظر بازیکنان دیگر هستیم.");
 
  }catch(error){
   say("خطا در ورود به اتاق:\n"+error.message);
  }
 }
 
+/* نمایش بازیکنان */
 async function refreshPlayers(){
  if(!currentRoom)return;
 
@@ -268,10 +271,11 @@ async function refreshPlayers(){
   }
 
  }catch(error){
-  say("خطا در دریافت بازیکنان: "+error.message);
+  say("خطا در دریافت بازیکنان:\n"+error.message);
  }
 }
 
+/* آمادگی */
 async function setReady(){
  try{
   if(!myPlayerRow){
@@ -297,10 +301,11 @@ async function setReady(){
   await refreshPlayers();
 
  }catch(error){
-  say("خطا در تغییر وضعیت: "+error.message);
+  say("خطا در تغییر وضعیت:\n"+error.message);
  }
 }
 
+/* خروج */
 async function leaveRoom(){
  try{
   await stopSubscription();
@@ -317,7 +322,7 @@ async function leaveRoom(){
   say("از اتاق خارج شدی.");
 
  }catch(error){
-  say("خطا در خروج از اتاق: "+error.message);
+  say("خطا در خروج از اتاق:\n"+error.message);
  }
 }
 
