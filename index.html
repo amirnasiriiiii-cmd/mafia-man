@@ -57,7 +57,7 @@ button:disabled{opacity:.5}
 
 const CFG = {
  endpoint:"https://fra.cloud.appwrite.io/v1",
- project:"6b07ab18000a7a4b0bcc",
+ project:"6b07ab180a7a4b0bcc",
  database:"6b07af6f000798319ab0",
  rooms:"6b07af9d00191c9f315e",
  players:"6b07b22000258b36e472"
@@ -102,7 +102,6 @@ async function stopSubscription(){
  }
 }
 
-/* ساخت اتاق */
 async function createRoom(){
  try{
   const name=getName();
@@ -134,7 +133,6 @@ async function createRoom(){
  }
 }
 
-/* ورود به اتاق */
 async function joinRoom(){
  try{
   const name=getName();
@@ -169,7 +167,6 @@ async function joinRoom(){
  }
 }
 
-/* ثبت بازیکن */
 async function enterRoom(code,name){
  try{
   await stopSubscription();
@@ -180,7 +177,7 @@ async function enterRoom(code,name){
    tableId:CFG.players,
    queries:[
     Appwrite.Query.equal("roomcode",code),
-    Appwrite.Query.equal("user_id",userId),
+    Appwrite.Query.equal("userId",userId),
     Appwrite.Query.limit(1)
    ]
   });
@@ -198,7 +195,7 @@ async function enterRoom(code,name){
     data:{
      roomcode:code,
      player_name:name,
-     user_id:userId,
+     userId:userId,
      is_ready:false,
      is_alive:true
     }
@@ -240,7 +237,6 @@ async function enterRoom(code,name){
  }
 }
 
-/* نمایش بازیکنان */
 async function refreshPlayers(){
  if(!currentRoom)return;
 
@@ -276,7 +272,6 @@ async function refreshPlayers(){
  }
 }
 
-/* آمادگی */
 async function setReady(){
  try{
   if(!myPlayerRow){
@@ -306,7 +301,6 @@ async function setReady(){
  }
 }
 
-/* خروج */
 async function leaveRoom(){
  try{
   await stopSubscription();
