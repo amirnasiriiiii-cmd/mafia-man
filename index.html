@@ -5,228 +5,264 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MAFIA MAN</title>
+<script src="https://cdn.jsdelivr.net/npm/appwrite@29.0.0"></script>
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;background:#101018;color:white;
- font-family:Tahoma,Arial,sans-serif;text-align:center;
-}
-header{
- padding:28px 10px;background:linear-gradient(135deg,#500000,#171721);
- border-bottom:2px solid #b18a36;
-}
-h1{color:#e6bd62;font-size:34px;margin:5px}
-h2{color:#e6bd62}
-main{max-width:550px;margin:auto;padding:18px}
-.card{
- background:#20202b;border:1px solid #48404a;
- border-radius:15px;padding:18px;margin:15px 0;
-}
-input{
- width:100%;padding:13px;margin:8px 0;
- border-radius:9px;border:1px solid #777;
- background:#12121a;color:white;font-size:16px;
-}
-button{
- padding:12px 18px;border:0;border-radius:9px;
- background:#a47b32;color:white;font-size:15px;
- margin:5px;cursor:pointer;
-}
-button:hover{background:#d09b3e}
-.red{background:#8c2020}
-.timer{font-size:48px;color:#f2c65d;margin:15px}
-.player{
- padding:12px;background:#30303d;
- border-radius:8px;margin:7px 0;
- display:flex;justify-content:space-between;
-}
-#message{color:#e8c36c;min-height:25px}
-.hidden{display:none}
+body{margin:0;background:#10131d;color:#fff;font-family:Tahoma,Arial,sans-serif;padding:20px}
+main{max-width:520px;margin:auto}
+h1{text-align:center;color:#e6b94f;margin:20px 0}
+.panel{background:#1c2232;padding:18px;border-radius:14px;margin:14px 0}
+input,button{width:100%;padding:14px;margin:7px 0;border:0;border-radius:9px;font-size:16px}
+input{background:#30394e;color:white}
+button{background:#d5a638;color:#171717;font-weight:bold}
+button.secondary{background:#46516b;color:white}
+button:disabled{opacity:.5}
+#players{padding:0;list-style:none}
+#players li{background:#30394e;padding:12px;margin:7px 0;border-radius:8px}
+.small{color:#aeb8ca;font-size:13px}
+#message{white-space:pre-wrap;line-height:1.8;color:#f4cf70}
 </style>
 </head>
 <body>
-
-<header>
-<h1>MAFIA MAN</h1>
-<p>دنیای بازی آنلاین مافیا</p>
-</header>
-
 <main>
+<h1>MAFIA MAN</h1>
 
-<div class="card">
-<h2>ساخت اتاق بازی</h2>
-<input id="room" placeholder="نام اتاق">
-<input id="host" placeholder="نام مدیر بازی">
-<button onclick="createRoom()">ساخت اتاق</button>
-<p id="roomInfo"></p>
-</div>
-
-<div class="card">
-<h2>بازیکنان</h2>
+<div class="panel" id="entry">
+<h3>ورود به بازی آنلاین</h3>
 <input id="playerName" placeholder="نام بازیکن">
-<button onclick="addPlayer()">افزودن بازیکن</button>
-<div id="players"></div>
-<p id="count">تعداد بازیکنان: ۰</p>
-<button onclick="assignRoles()">تخصیص تصادفی نقش‌ها</button>
+<button onclick="createRoom()">ساخت اتاق جدید</button>
+<hr>
+<input id="roomCode" placeholder="کد اتاق">
+<button class="secondary" onclick="joinRoom()">ورود به اتاق</button>
+<p class="small">برای ورود دوستان، کد اتاق را برایشان بفرست.</p>
 </div>
 
-<div class="card">
-<h2>مرحله بازی</h2>
-<h3 id="stage">آماده شروع</h3>
-<div class="timer" id="timer">60</div>
-<button onclick="startTimer()">شروع مرحله</button>
-<button onclick="nextStage()">مرحله بعد</button>
-<button class="red" onclick="stopTimer()">توقف</button>
-<p id="message"></p>
+<div class="panel" id="game" hidden>
+<h3>اتاق بازی</h3>
+<p>کد اتاق: <b id="roomLabel"></b></p>
+<p class="small" id="hostLabel"></p>
+<h3>بازیکنان حاضر</h3>
+<ul id="players"></ul>
+<button onclick="setReady()">آماده‌ام</button>
+<button class="secondary" onclick="leaveRoom()">خروج از اتاق</button>
 </div>
 
-<div class="card">
-<h2>نقش بازیکنان</h2>
-<p>برای نمایش نقش هر بازیکن روی نام او بزنید.</p>
-<div id="roles"></div>
+<div class="panel">
+<p id="message">در حال آماده‌سازی اتصال...</p>
 </div>
-
-<div class="card">
-<h2>مدیریت بازی</h2>
-<button class="red" onclick="resetGame()">شروع مجدد بازی</button>
-</div>
-
 </main>
 
 <script>
-let players=[];
-let stages=["شب","گفتگو","رأی‌گیری"];
-let stageIndex=0;
-let seconds=60;
-let interval=null;
-let roles=[];
+const CFG = {
+ endpoint: "https://fra.cloud.appwrite.io/v1",
+ project: "6b07ab18000a7a4b0bcc",
+ database: "6b07af6f000798319ab0",
+ rooms: "6b07af9d00191c9f315e",
+ players: "6b07b22000258b36e472"
+};
 
-function createRoom(){
- let name=document.getElementById("room").value.trim();
- let host=document.getElementById("host").value.trim();
- if(!name||!host){
- alert("نام اتاق و مدیر را وارد کنید");
- return;
- }
- let code=Math.random().toString(36).substring(2,8).toUpperCase();
- document.getElementById("roomInfo").innerText=
- "اتاق "+name+" ساخته شد | کد اتاق: "+code+
- " | مدیر: "+host;
+const client = new Appwrite.Client()
+ .setEndpoint(CFG.endpoint)
+ .setProject(CFG.project);
+
+const db = new Appwrite.TablesDB(client);
+const realtime = new Appwrite.Realtime(client);
+
+let currentRoom = "";
+let currentHost = "";
+let myPlayerRow = "";
+let subscription = null;
+let ready = false;
+
+let userId = localStorage.getItem("mafia_user_id");
+if (!userId) {
+ userId = Appwrite.ID.unique();
+ localStorage.setItem("mafia_user_id", userId);
 }
 
-function addPlayer(){
- let input=document.getElementById("playerName");
- let name=input.value.trim();
- if(!name)return;
- if(players.includes(name)){
- alert("این بازیکن قبلاً اضافه شده است");
- return;
- }
- players.push(name);
- input.value="";
- renderPlayers();
+function say(text) {
+ document.getElementById("message").textContent = text;
 }
 
-function renderPlayers(){
- let box=document.getElementById("players");
- box.innerHTML="";
- players.forEach((p,i)=>{
- let div=document.createElement("div");
- div.className="player";
- let span=document.createElement("span");
- span.innerText=p;
- let btn=document.createElement("button");
- btn.className="red";
- btn.innerText="حذف";
- btn.onclick=()=>{players.splice(i,1);roles=[];renderPlayers()};
- div.append(span,btn);
- box.appendChild(div);
+function getName() {
+ return document.getElementById("playerName").value.trim();
+}
+
+function makeCode() {
+ return Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+async function createRoom() {
+ try {
+  const name = getName();
+  if (!name) return say("ابتدا نام بازیکن را وارد کن.");
+
+  say("در حال ساخت اتاق...");
+  const code = makeCode();
+
+  await db.createRow({
+   databaseId: CFG.database,
+   tableId: CFG.rooms,
+   rowId: Appwrite.ID.unique(),
+   data: {
+    room_code: code,
+    host_id: userId,
+    status: "waiting"
+   }
+  });
+
+  currentHost = userId;
+  await enterRoom(code, name);
+ } catch(e) {
+  say("خطا در ساخت اتاق:\n" + e.message);
+ }
+}
+
+async function joinRoom() {
+ try {
+  const name = getName();
+  const code = document.getElementById("roomCode").value.trim().toUpperCase();
+
+  if (!name || !code) return say("نام بازیکن و کد اتاق را وارد کن.");
+
+  say("در حال بررسی کد اتاق...");
+
+  const result = await db.listRows({
+   databaseId: CFG.database,
+   tableId: CFG.rooms,
+   queries: [Appwrite.Query.limit(100)]
+  });
+
+  const room = result.rows.find(r => r.room_code === code);
+
+  if (!room) return say("اتاقی با این کد پیدا نشد.");
+
+  currentHost = room.host_id;
+  await enterRoom(code, name);
+ } catch(e) {
+  say("خطا در ورود:\n" + e.message);
+ }
+}
+
+async function enterRoom(code, name) {
+ currentRoom = code;
+
+ const existing = await db.listRows({
+  databaseId: CFG.database,
+  tableId: CFG.players,
+  queries: [Appwrite.Query.limit(100)]
  });
- document.getElementById("count").innerText=
- "تعداد بازیکنان: "+players.length;
-}
 
-function assignRoles(){
- if(players.length<5){
- alert("حداقل ۵ بازیکن لازم است");
- return;
+ const mine = existing.rows.find(p =>
+  p.room_code === code && p.user_id === userId
+ );
+
+ if (mine) {
+  myPlayerRow = mine.$id;
+ } else {
+  const created = await db.createRow({
+   databaseId: CFG.database,
+   tableId: CFG.players,
+   rowId: Appwrite.ID.unique(),
+   data: {
+    room_code: code,
+    player_name: name,
+    user_id: userId,
+    is_ready: false,
+    is_alive: true
+   }
+  });
+  myPlayerRow = created.$id;
  }
- let mafiaCount=Math.max(1,Math.floor(players.length/4));
- roles=players.map((p,i)=>({
- name:p,
- role:i<mafiaCount?"مافیا":
- i===mafiaCount?"دکتر":
- i===mafiaCount+1?"کارآگاه":"شهروند"
- }));
- for(let i=roles.length-1;i>0;i--){
- let j=Math.floor(Math.random()*(i+1));
- [roles[i],roles[j]]=[roles[j],roles[i]];
+
+ document.getElementById("entry").hidden = true;
+ document.getElementById("game").hidden = false;
+ document.getElementById("roomLabel").textContent = code;
+ document.getElementById("hostLabel").textContent =
+  currentHost === userId ? "شما میزبان این اتاق هستید." : "شما بازیکن این اتاق هستید.";
+
+ await refreshPlayers();
+
+ if (subscription) await subscription.unsubscribe();
+
+ subscription = await realtime.subscribe(
+  Appwrite.Channel.tablesdb(CFG.database).table(CFG.players).row(),
+  response => {
+   if (response.payload && response.payload.room_code === currentRoom) {
+    refreshPlayers();
+   }
+  }
+ );
+
+ say("اتصال برقرار شد. منتظر بازیکنان دیگر هستیم.");
+}
+
+async function refreshPlayers() {
+ if (!currentRoom) return;
+
+ try {
+  const result = await db.listRows({
+   databaseId: CFG.database,
+   tableId: CFG.players,
+   queries: [Appwrite.Query.limit(100)]
+  });
+
+  const members = result.rows.filter(p => p.room_code === currentRoom);
+  const list = document.getElementById("players");
+  list.innerHTML = "";
+
+  members.forEach(p => {
+   const li = document.createElement("li");
+   li.textContent =
+    p.player_name + (p.is_ready ? " — آماده" : " — در انتظار");
+   list.appendChild(li);
+  });
+
+  if (!members.length) {
+   list.innerHTML = "<li>هنوز بازیکنی وارد نشده است.</li>";
+  }
+ } catch(e) {
+  say("خطا در دریافت بازیکنان: " + e.message);
  }
- showRoles();
- document.getElementById("message").innerText=
- "نقش‌ها با موفقیت تعیین شدند.";
 }
 
-function showRoles(){
- let box=document.getElementById("roles");
- box.innerHTML="";
- roles.forEach(p=>{
- let div=document.createElement("div");
- div.className="player";
- let name=document.createElement("span");
- name.innerText=p.name;
- let btn=document.createElement("button");
- btn.innerText="مشاهده نقش";
- btn.onclick=()=>{
- alert(p.name+" : "+p.role);
- };
- div.append(name,btn);
- box.appendChild(div);
- });
-}
+async function setReady() {
+ try {
+  if (!myPlayerRow) return;
 
-function startTimer(){
- stopTimer();
- interval=setInterval(()=>{
- if(seconds>0){
- seconds--;
- document.getElementById("timer").innerText=seconds;
- }else{
- stopTimer();
- document.getElementById("message").innerText=
- "زمان مرحله به پایان رسید!";
+  ready = !ready;
+
+  await db.updateRow({
+   databaseId: CFG.database,
+   tableId: CFG.players,
+   rowId: myPlayerRow,
+   data: { is_ready: ready }
+  });
+
+  say(ready ? "وضعیت شما: آماده" : "وضعیت شما: آماده نیست");
+  await refreshPlayers();
+ } catch(e) {
+  ready = !ready;
+  say("خطا در تغییر وضعیت: " + e.message);
  }
- },1000);
 }
 
-function stopTimer(){
- if(interval)clearInterval(interval);
- interval=null;
+async function leaveRoom() {
+ try {
+  if (subscription) await subscription.unsubscribe();
+  subscription = null;
+  currentRoom = "";
+  currentHost = "";
+  myPlayerRow = "";
+  document.getElementById("game").hidden = true;
+  document.getElementById("entry").hidden = false;
+  say("از اتاق خارج شدی.");
+ } catch(e) {
+  say("خطا: " + e.message);
+ }
 }
 
-function nextStage(){
- stopTimer();
- stageIndex=(stageIndex+1)%stages.length;
- seconds=60;
- document.getElementById("stage").innerText=stages[stageIndex];
- document.getElementById("timer").innerText=60;
- document.getElementById("message").innerText=
- "مرحله "+stages[stageIndex]+" آغاز شد.";
-}
-
-function resetGame(){
- stopTimer();
- players=[];
- roles=[];
- stageIndex=0;
- seconds=60;
- document.getElementById("stage").innerText="آماده شروع";
- document.getElementById("timer").innerText=60;
- document.getElementById("roomInfo").innerText="";
- document.getElementById("message").innerText="";
- document.getElementById("roles").innerHTML="";
- renderPlayers();
-}
+say("اتصال Appwrite آماده است. نام خود را وارد کن.");
 </script>
 </body>
 </html>
