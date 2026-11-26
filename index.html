@@ -47,7 +47,6 @@ button:disabled{opacity:.5;cursor:not-allowed}
 hr{border:0;border-top:1px solid #49404a;margin:20px 0}
 </style>
 </head>
-
 <body>
 <main>
 <h1>MAFIA MAN</h1>
@@ -59,7 +58,6 @@ hr{border:0;border-top:1px solid #49404a;margin:20px 0}
 
  <hr>
  <h3>ساخت اتاق جدید</h3>
-
  <label class="small">تعداد بازیکنان</label>
  <select id="maxPlayers">
   <option value="4">۴ بازیکن</option>
@@ -158,18 +156,15 @@ function scenarioName(value){
 async function ensureAuth(){
  try{
   let info;
-
   try{
    info=await account.get();
   }catch(e){
    await account.createAnonymousSession();
    info=await account.get();
   }
-
   userId=info.$id;
   say("ورود امن انجام شد. آماده بازی هستی.");
   return true;
-
  }catch(error){
   say("خطا در ورود ناشناس:\n"+error.message);
   return false;
@@ -197,7 +192,6 @@ async function createRoom(){
   const maxplayers=Number(
    document.getElementById("maxPlayers").value
   );
-
   const scenario=document.getElementById("scenario").value;
 
   if(maxplayers<4||maxplayers>12){
@@ -207,9 +201,9 @@ async function createRoom(){
   button.disabled=true;
   say("در حال ساخت اتاق...");
 
-  let code=makeCode();
+  const code=makeCode();
 
-  const room=await db.createRow({
+  await db.createRow({
    databaseId:CFG.database,
    tableId:CFG.rooms,
    rowId:Appwrite.ID.unique(),
@@ -218,6 +212,7 @@ async function createRoom(){
     hostId:userId,
     status:"waiting",
     scenario:scenario,
+    assistantModeratorId:"",
     maxplayers:maxplayers,
     currentphase:"lobby"
    }
@@ -301,7 +296,6 @@ async function enterRoom(code,name){
   if(mine){
    myPlayerRow=mine.$id;
    ready=Boolean(mine.isReady);
-
   }else{
    const count=await db.listRows({
     databaseId:CFG.database,
@@ -340,7 +334,6 @@ async function enterRoom(code,name){
 
   document.getElementById("entry").classList.add("hidden");
   document.getElementById("game").classList.remove("hidden");
-
   document.getElementById("roomLabel").textContent=code;
 
   document.getElementById("capacityLabel").textContent=
@@ -397,11 +390,9 @@ async function refreshPlayers(){
 
   result.rows.forEach(player=>{
    const li=document.createElement("li");
-
    li.textContent=player.PlayerName+
     (player.isReady?" — آماده":" — در انتظار")+
     (player.UserId===currentHost?" — میزبان":"");
-
    list.appendChild(li);
   });
 
@@ -431,9 +422,7 @@ async function setReady(){
 
   ready=newReady;
   updateReadyButton();
-
   say(ready?"وضعیت شما: آماده":"آمادگی لغو شد");
-
   await refreshPlayers();
 
  }catch(error){
@@ -463,7 +452,6 @@ async function leaveRoom(){
 
 (async function(){
  const ok=await ensureAuth();
-
  if(ok){
   say("اتصال برقرار شد. نام خود را وارد کن.");
  }
