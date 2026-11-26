@@ -47,6 +47,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 hr{border:0;border-top:1px solid #49404a;margin:20px 0}
 </style>
 </head>
+
 <body>
 <main>
 <h1>MAFIA MAN</h1>
@@ -54,10 +55,11 @@ hr{border:0;border-top:1px solid #49404a;margin:20px 0}
 
 <div class="panel" id="entry">
  <h3>ورود به بازی</h3>
- <input id="playerName" maxlength="30" placeholder="نام بازیکن">
+ <input id="playerName" maxlength="50" placeholder="نام بازیکن">
 
  <hr>
  <h3>ساخت اتاق جدید</h3>
+
  <label class="small">تعداد بازیکنان</label>
  <select id="maxPlayers">
   <option value="4">۴ بازیکن</option>
@@ -70,11 +72,19 @@ hr{border:0;border-top:1px solid #49404a;margin:20px 0}
   <option value="11">۱۱ بازیکن</option>
   <option value="12" selected>۱۲ بازیکن</option>
  </select>
+
+ <label class="small">سناریوی بازی</label>
+ <select id="scenario">
+  <option value="classic">کلاسیک</option>
+  <option value="commando">تکاور</option>
+  <option value="negotiation">مذاکره</option>
+ </select>
+
  <button id="createButton" onclick="createRoom()">ساخت اتاق جدید</button>
 
  <hr>
  <h3>ورود به اتاق دوستان</h3>
- <input id="roomCode" maxlength="10" placeholder="کد اتاق">
+ <input id="roomCode" maxlength="20" placeholder="کد اتاق">
  <button class="secondary" id="joinButton" onclick="joinRoom()">ورود به اتاق</button>
 </div>
 
@@ -83,6 +93,7 @@ hr{border:0;border-top:1px solid #49404a;margin:20px 0}
  <p>کد اتاق: <b class="gold" id="roomLabel"></b></p>
  <p class="small" id="hostLabel"></p>
  <p class="small" id="capacityLabel"></p>
+ <p class="small" id="scenarioLabel"></p>
  <hr>
  <h3>بازیکنان حاضر</h3>
  <ul id="players"></ul>
@@ -119,6 +130,7 @@ let currentRoom="";
 let currentHost="";
 let myPlayerRow="";
 let currentMaxPlayers=12;
+let currentScenario="classic";
 let ready=false;
 let subscription=null;
 
@@ -134,19 +146,30 @@ function makeCode(){
  return Math.random().toString(36).substring(2,8).toUpperCase();
 }
 
+function scenarioName(value){
+ const names={
+  classic:"کلاسیک",
+  commando:"تکاور",
+  negotiation:"مذاکره"
+ };
+ return names[value]||"کلاسیک";
+}
+
 async function ensureAuth(){
  try{
   let info;
+
   try{
    info=await account.get();
   }catch(e){
    await account.createAnonymousSession();
    info=await account.get();
   }
+
   userId=info.$id;
-  localStorage.setItem("mafia_user_id",userId);
   say("ورود امن انجام شد. آماده بازی هستی.");
   return true;
+
  }catch(error){
   say("خطا در ورود ناشناس:\n"+error.message);
   return false;
@@ -161,6 +184,8 @@ async function stopSubscription(){
 }
 
 async function createRoom(){
+ const button=document.getElementById("createButton");
+
  try{
   if(!userId){
    return say("ورود به حساب در حال انجام است. چند لحظه صبر کن.");
@@ -169,7 +194,17 @@ async function createRoom(){
   const name=getName();
   if(!name)return say("ابتدا نام بازیکن را وارد کن.");
 
-  const maxplayers=Number(document.getElementById("maxPlayers").value);
+  const maxplayers=Number(
+   document.getElementById("maxPlayers").value
+  );
+
+  const scenario=document.getElementById("scenario").value;
+
+  if(maxplayers<4||maxplayers>12){
+   return say("تعداد بازیکنان باید بین ۴ تا ۱۲ باشد.");
+  }
+
+  button.disabled=true;
   say("در حال ساخت اتاق...");
 
   let code=makeCode();
@@ -182,6 +217,7 @@ async function createRoom(){
     roomcode:code,
     hostId:userId,
     status:"waiting",
+    scenario:scenario,
     maxplayers:maxplayers,
     currentphase:"lobby"
    }
@@ -189,14 +225,20 @@ async function createRoom(){
 
   currentHost=userId;
   currentMaxPlayers=maxplayers;
+  currentScenario=scenario;
+
   await enterRoom(code,name);
 
  }catch(error){
   say("خطا در ساخت اتاق:\n"+error.message);
+ }finally{
+  button.disabled=false;
  }
 }
 
 async function joinRoom(){
+ const button=document.getElementById("joinButton");
+
  try{
   if(!userId){
    return say("ورود به حساب در حال انجام است. چند لحظه صبر کن.");
@@ -205,8 +247,11 @@ async function joinRoom(){
   const name=getName();
   const code=document.getElementById("roomCode").value.trim().toUpperCase();
 
-  if(!name||!code)return say("نام بازیکن و کد اتاق را وارد کن.");
+  if(!name||!code){
+   return say("نام بازیکن و کد اتاق را وارد کن.");
+  }
 
+  button.disabled=true;
   say("در حال بررسی اتاق...");
 
   const result=await db.listRows({
@@ -219,16 +264,20 @@ async function joinRoom(){
   });
 
   const room=result.rows[0];
+
   if(!room)return say("اتاقی با این کد پیدا نشد.");
   if(room.status!=="waiting")return say("این اتاق در حال بازی است.");
 
   currentHost=room.hostId;
   currentMaxPlayers=Number(room.maxplayers)||12;
+  currentScenario=room.scenario||"classic";
 
   await enterRoom(code,name);
 
  }catch(error){
   say("خطا در ورود به اتاق:\n"+error.message);
+ }finally{
+  button.disabled=false;
  }
 }
 
@@ -252,6 +301,7 @@ async function enterRoom(code,name){
   if(mine){
    myPlayerRow=mine.$id;
    ready=Boolean(mine.isReady);
+
   }else{
    const count=await db.listRows({
     databaseId:CFG.database,
@@ -290,12 +340,19 @@ async function enterRoom(code,name){
 
   document.getElementById("entry").classList.add("hidden");
   document.getElementById("game").classList.remove("hidden");
+
   document.getElementById("roomLabel").textContent=code;
+
   document.getElementById("capacityLabel").textContent=
    "ظرفیت اتاق: "+currentMaxPlayers+" بازیکن";
 
+  document.getElementById("scenarioLabel").textContent=
+   "سناریو: "+scenarioName(currentScenario);
+
   document.getElementById("hostLabel").textContent=
-   currentHost===userId?"شما میزبان اصلی اتاق هستید.":"شما بازیکن این اتاق هستید.";
+   currentHost===userId
+   ?"شما میزبان اصلی اتاق هستید."
+   :"شما بازیکن این اتاق هستید.";
 
   updateReadyButton();
   await refreshPlayers();
@@ -303,7 +360,8 @@ async function enterRoom(code,name){
   subscription=realtime.subscribe(
    Appwrite.Channel.tablesdb(CFG.database).table(CFG.players).row(),
    response=>{
-    if(response.payload && response.payload.roomcode===currentRoom){
+    if(response.payload &&
+       response.payload.roomcode===currentRoom){
      refreshPlayers();
     }
    }
@@ -339,9 +397,11 @@ async function refreshPlayers(){
 
   result.rows.forEach(player=>{
    const li=document.createElement("li");
+
    li.textContent=player.PlayerName+
     (player.isReady?" — آماده":" — در انتظار")+
     (player.UserId===currentHost?" — میزبان":"");
+
    list.appendChild(li);
   });
 
@@ -371,7 +431,9 @@ async function setReady(){
 
   ready=newReady;
   updateReadyButton();
+
   say(ready?"وضعیت شما: آماده":"آمادگی لغو شد");
+
   await refreshPlayers();
 
  }catch(error){
@@ -401,6 +463,7 @@ async function leaveRoom(){
 
 (async function(){
  const ok=await ensureAuth();
+
  if(ok){
   say("اتصال برقرار شد. نام خود را وارد کن.");
  }
