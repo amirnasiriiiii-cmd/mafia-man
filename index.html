@@ -252,7 +252,8 @@ async function setReady() {
 
 async function leaveRoom() {
  try {
-  if (subscription) await subscription.unsubscribe();
+  if (subscription) subscription();
+subscription = null;
   subscription = null;
   currentRoom = "";
   currentHost = "";
