@@ -5,125 +5,64 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MAFIA MAN</title>
-
 <script src="https://cdn.jsdelivr.net/npm/appwrite@29.0.0"></script>
-
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;
- background:#10131d;
- color:#fff;
- font-family:Tahoma,Arial,sans-serif;
- padding:20px;
-}
+body{margin:0;background:#10131d;color:#fff;font-family:Tahoma,Arial,sans-serif;padding:20px}
 main{max-width:520px;margin:auto}
 h1{text-align:center;color:#e6b94f;margin:20px 0}
-.panel{
- background:#1c2232;
- padding:18px;
- border-radius:14px;
- margin:14px 0;
-}
-input,button{
- width:100%;
- padding:14px;
- margin:7px 0;
- border:0;
- border-radius:9px;
- font-size:16px;
-}
+.panel{background:#1c2232;padding:18px;border-radius:14px;margin:14px 0}
+input,button{width:100%;padding:14px;margin:7px 0;border:0;border-radius:9px;font-size:16px}
 input{background:#30394e;color:white}
-button{
- background:#d5a638;
- color:#171717;
- font-weight:bold;
- cursor:pointer;
-}
+button{background:#d5a638;color:#171717;font-weight:bold;cursor:pointer}
 button.secondary{background:#46516b;color:white}
 button:disabled{opacity:.5}
 #players{padding:0;list-style:none}
-#players li{
- background:#30394e;
- padding:12px;
- margin:7px 0;
- border-radius:8px;
-}
+#players li{background:#30394e;padding:12px;margin:7px 0;border-radius:8px}
 .small{color:#aeb8ca;font-size:13px}
-#message{
- white-space:pre-wrap;
- line-height:1.8;
- color:#f4cf70;
-}
+#message{white-space:pre-wrap;line-height:1.8;color:#f4cf70}
 </style>
 </head>
-
 <body>
 <main>
-
 <h1>MAFIA MAN</h1>
 
 <div class="panel" id="entry">
- <h3>ورود به بازی آنلاین</h3>
-
- <input id="playerName" placeholder="نام بازیکن">
-
- <button id="createButton" onclick="createRoom()">
- ساخت اتاق جدید
- </button>
-
- <hr>
-
- <input id="roomCode" placeholder="کد اتاق">
-
- <button class="secondary" id="joinButton" onclick="joinRoom()">
- ورود به اتاق
- </button>
-
- <p class="small">
- برای ورود دوستان، کد اتاق را برایشان بفرست.
- </p>
+<h3>ورود به بازی آنلاین</h3>
+<input id="playerName" placeholder="نام بازیکن">
+<button onclick="createRoom()">ساخت اتاق جدید</button>
+<hr>
+<input id="roomCode" placeholder="کد اتاق">
+<button class="secondary" onclick="joinRoom()">ورود به اتاق</button>
+<p class="small">برای ورود دوستان، کد اتاق را برایشان بفرست.</p>
 </div>
 
 <div class="panel" id="game" hidden>
- <h3>اتاق بازی</h3>
-
- <p>کد اتاق: <b id="roomLabel"></b></p>
-
- <p class="small" id="hostLabel"></p>
-
- <h3>بازیکنان حاضر</h3>
-
- <ul id="players"></ul>
-
- <button id="readyButton" onclick="setReady()">
- آماده‌ام
- </button>
-
- <button class="secondary" onclick="leaveRoom()">
- خروج از اتاق
- </button>
+<h3>اتاق بازی</h3>
+<p>کد اتاق: <b id="roomLabel"></b></p>
+<p class="small" id="hostLabel"></p>
+<h3>بازیکنان حاضر</h3>
+<ul id="players"></ul>
+<button id="readyButton" onclick="setReady()">آماده‌ام</button>
+<button class="secondary" onclick="leaveRoom()">خروج از اتاق</button>
 </div>
 
 <div class="panel">
- <p id="message">در حال آماده‌سازی اتصال...</p>
+<p id="message">در حال آماده‌سازی اتصال...</p>
 </div>
-
 </main>
 
 <script>
 "use strict";
 
-/* تنظیمات Appwrite */
 const CFG = {
- endpoint: "https://fra.cloud.appwrite.io/v1",
- project: "6b07ab18000a7a4b0bcc",
- database: "6b07af6f000798319ab0",
- rooms: "6b07af9d00191c9f315e",
- players: "6b07b22000258b36e472"
+ endpoint:"https://fra.cloud.appwrite.io/v1",
+ project:"6b07ab18000a7a4b0bcc",
+ database:"6b07af6f000798319ab0",
+ rooms:"6b07af9d00191c9f315e",
+ players:"6b07b22000258b36e472"
 };
 
-/* اتصال */
 const client = new Appwrite.Client()
  .setEndpoint(CFG.endpoint)
  .setProject(CFG.project);
@@ -131,184 +70,164 @@ const client = new Appwrite.Client()
 const db = new Appwrite.TablesDB(client);
 const realtime = new Appwrite.Realtime(client);
 
-/* وضعیت بازی */
-let currentRoom = "";
-let currentHost = "";
-let myPlayerRow = "";
-let subscription = null;
-let ready = false;
+let currentRoom="";
+let currentHost="";
+let myPlayerRow="";
+let subscription=null;
+let ready=false;
 
-/* شناسه دستگاه */
-let userId = localStorage.getItem("mafia_user_id");
+let userId=localStorage.getItem("mafia_user_id");
 
-if (!userId) {
- userId = Appwrite.ID.unique();
- localStorage.setItem("mafia_user_id", userId);
+if(!userId){
+ userId=Appwrite.ID.unique();
+ localStorage.setItem("mafia_user_id",userId);
 }
 
-/* پیام */
-function say(message) {
- document.getElementById("message").textContent = message;
+function say(message){
+ document.getElementById("message").textContent=message;
 }
 
-/* نام بازیکن */
-function getName() {
+function getName(){
  return document.getElementById("playerName").value.trim();
 }
 
-/* کد اتاق */
-function makeCode() {
- return Math.random().toString(36)
-  .substring(2, 8)
-  .toUpperCase();
+function makeCode(){
+ return Math.random().toString(36).substring(2,8).toUpperCase();
 }
 
-/* قطع اتصال قبلی */
-async function stopSubscription() {
- if (subscription) {
+async function stopSubscription(){
+ if(subscription){
   await subscription.unsubscribe();
-  subscription = null;
+  subscription=null;
  }
 }
 
 /* ساخت اتاق */
-async function createRoom() {
- try {
-  const name = getName();
+async function createRoom(){
+ try{
+  const name=getName();
 
-  if (!name) {
+  if(!name){
    return say("ابتدا نام بازیکن را وارد کن.");
   }
 
   say("در حال ساخت اتاق...");
 
-  const code = makeCode();
+  const code=makeCode();
 
   await db.createRow({
-   databaseId: CFG.database,
-   tableId: CFG.rooms,
-   rowId: Appwrite.ID.unique(),
-   data: {
-    roomcode: code,
-    hostId: userId,
-    status: "waiting"
+   databaseId:CFG.database,
+   tableId:CFG.rooms,
+   rowId:Appwrite.ID.unique(),
+   data:{
+    roomcode:code,
+    hostId:userId,
+    status:"waiting"
    }
   });
 
-  currentHost = userId;
+  currentHost=userId;
+  await enterRoom(code,name);
 
-  await enterRoom(code, name);
-
- } catch (error) {
-  say("خطا در ساخت اتاق:\n" + error.message);
+ }catch(error){
+  say("خطا در ساخت اتاق:\n"+error.message);
  }
 }
 
 /* ورود به اتاق */
-async function joinRoom() {
- try {
-  const name = getName();
+async function joinRoom(){
+ try{
+  const name=getName();
+  const code=document.getElementById("roomCode").value.trim().toUpperCase();
 
-  const code = document.getElementById("roomCode")
-   .value.trim().toUpperCase();
-
-  if (!name || !code) {
+  if(!name||!code){
    return say("نام بازیکن و کد اتاق را وارد کن.");
   }
 
   say("در حال بررسی کد اتاق...");
 
-  const result = await db.listRows({
-   databaseId: CFG.database,
-   tableId: CFG.rooms,
-   queries: [
-    Appwrite.Query.equal("roomcode", code),
+  const result=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.rooms,
+   queries:[
+    Appwrite.Query.equal("roomcode",code),
     Appwrite.Query.limit(1)
    ]
   });
 
-  const room = result.rows[0];
+  const room=result.rows[0];
 
-  if (!room) {
+  if(!room){
    return say("اتاقی با این کد پیدا نشد.");
   }
 
-  currentHost = room.hostId;
+  currentHost=room.hostId;
+  await enterRoom(code,name);
 
-  await enterRoom(code, name);
-
- } catch (error) {
-  say("خطا در ورود:\n" + error.message);
+ }catch(error){
+  say("خطا در ورود:\n"+error.message);
  }
 }
 
-/* ثبت بازیکن در اتاق */
-async function enterRoom(code, name) {
- try {
+/* ثبت بازیکن */
+async function enterRoom(code,name){
+ try{
   await stopSubscription();
+  currentRoom=code;
 
-  currentRoom = code;
-
-  const existing = await db.listRows({
-   databaseId: CFG.database,
-   tableId: CFG.players,
-   queries: [
-    Appwrite.Query.equal("room_code", code),
-    Appwrite.Query.equal("user_id", userId),
+  const existing=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.players,
+   queries:[
+    Appwrite.Query.equal("roomcode",code),
+    Appwrite.Query.equal("user_id",userId),
     Appwrite.Query.limit(1)
    ]
   });
 
-  const mine = existing.rows[0];
+  const mine=existing.rows[0];
 
-  if (mine) {
-   myPlayerRow = mine.$id;
-   ready = Boolean(mine.is_ready);
-
-  } else {
-   const created = await db.createRow({
-    databaseId: CFG.database,
-    tableId: CFG.players,
-    rowId: Appwrite.ID.unique(),
-    data: {
-     room_code: code,
-     player_name: name,
-     user_id: userId,
-     is_ready: false,
-     is_alive: true
+  if(mine){
+   myPlayerRow=mine.$id;
+   ready=Boolean(mine.is_ready);
+  }else{
+   const created=await db.createRow({
+    databaseId:CFG.database,
+    tableId:CFG.players,
+    rowId:Appwrite.ID.unique(),
+    data:{
+     roomcode:code,
+     player_name:name,
+     user_id:userId,
+     is_ready:false,
+     is_alive:true
     }
    });
 
-   myPlayerRow = created.$id;
-   ready = false;
+   myPlayerRow=created.$id;
+   ready=false;
   }
 
-  document.getElementById("entry").hidden = true;
-  document.getElementById("game").hidden = false;
+  document.getElementById("entry").hidden=true;
+  document.getElementById("game").hidden=false;
+  document.getElementById("roomLabel").textContent=code;
 
-  document.getElementById("roomLabel").textContent = code;
+  document.getElementById("hostLabel").textContent=
+   currentHost===userId
+    ?"شما میزبان این اتاق هستید."
+    :"شما بازیکن این اتاق هستید.";
 
-  document.getElementById("hostLabel").textContent =
-   currentHost === userId
-    ? "شما میزبان این اتاق هستید."
-    : "شما بازیکن این اتاق هستید.";
-
-  document.getElementById("readyButton").textContent =
-   ready ? "لغو آمادگی" : "آماده‌ام";
+  document.getElementById("readyButton").textContent=
+   ready?"لغو آمادگی":"آماده‌ام";
 
   await refreshPlayers();
 
-  /* اتصال زنده بازیکنان */
-  subscription = await realtime.subscribe(
+  subscription=await realtime.subscribe(
    Appwrite.Channel.tablesdb(CFG.database)
     .table(CFG.players)
     .row(),
-
-   response => {
-    if (
-     response.payload &&
-     response.payload.room_code === currentRoom
-    ) {
+   response=>{
+    if(response.payload&&response.payload.roomcode===currentRoom){
      refreshPlayers();
     }
    }
@@ -316,107 +235,99 @@ async function enterRoom(code, name) {
 
   say("اتصال برقرار شد. منتظر بازیکنان دیگر هستیم.");
 
- } catch (error) {
-  say("خطا در ورود به اتاق:\n" + error.message);
+ }catch(error){
+  say("خطا در ورود به اتاق:\n"+error.message);
  }
 }
 
 /* نمایش بازیکنان */
-async function refreshPlayers() {
- if (!currentRoom) return;
+async function refreshPlayers(){
+ if(!currentRoom)return;
 
- try {
-  const result = await db.listRows({
-   databaseId: CFG.database,
-   tableId: CFG.players,
-   queries: [
-    Appwrite.Query.equal("room_code", currentRoom),
+ try{
+  const result=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.players,
+   queries:[
+    Appwrite.Query.equal("roomcode",currentRoom),
     Appwrite.Query.limit(100)
    ]
   });
 
-  const members = result.rows;
-  const list = document.getElementById("players");
+  const members=result.rows;
+  const list=document.getElementById("players");
+  list.innerHTML="";
 
-  list.innerHTML = "";
-
-  members.forEach(player => {
-   const li = document.createElement("li");
-
-   li.textContent =
-    player.player_name +
-    (player.is_ready ? " — آماده" : " — در انتظار");
-
+  members.forEach(player=>{
+   const li=document.createElement("li");
+   li.textContent=player.player_name+
+    (player.is_ready?" — آماده":" — در انتظار");
    list.appendChild(li);
   });
 
-  if (members.length === 0) {
-   const li = document.createElement("li");
-   li.textContent = "هنوز بازیکنی وارد نشده است.";
+  if(members.length===0){
+   const li=document.createElement("li");
+   li.textContent="هنوز بازیکنی وارد نشده است.";
    list.appendChild(li);
   }
 
- } catch (error) {
-  say("خطا در دریافت بازیکنان: " + error.message);
+ }catch(error){
+  say("خطا در دریافت بازیکنان: "+error.message);
  }
 }
 
-/* آمادگی بازیکن */
-async function setReady() {
- try {
-  if (!myPlayerRow) {
+/* آمادگی */
+async function setReady(){
+ try{
+  if(!myPlayerRow){
    return say("بازیکن شما در اتاق پیدا نشد.");
   }
 
-  const newReady = !ready;
+  const newReady=!ready;
 
   await db.updateRow({
-   databaseId: CFG.database,
-   tableId: CFG.players,
-   rowId: myPlayerRow,
-   data: {
-    is_ready: newReady
-   }
+   databaseId:CFG.database,
+   tableId:CFG.players,
+   rowId:myPlayerRow,
+   data:{is_ready:newReady}
   });
 
-  ready = newReady;
+  ready=newReady;
 
-  document.getElementById("readyButton").textContent =
-   ready ? "لغو آمادگی" : "آماده‌ام";
+  document.getElementById("readyButton").textContent=
+   ready?"لغو آمادگی":"آماده‌ام";
 
-  say(ready ? "وضعیت شما: آماده" : "وضعیت شما: آماده نیست");
+  say(ready?"وضعیت شما: آماده":"وضعیت شما: آماده نیست");
 
   await refreshPlayers();
 
- } catch (error) {
-  say("خطا در تغییر وضعیت: " + error.message);
+ }catch(error){
+  say("خطا در تغییر وضعیت: "+error.message);
  }
 }
 
-/* خروج از اتاق */
-async function leaveRoom() {
- try {
+/* خروج */
+async function leaveRoom(){
+ try{
   await stopSubscription();
 
-  currentRoom = "";
-  currentHost = "";
-  myPlayerRow = "";
-  ready = false;
+  currentRoom="";
+  currentHost="";
+  myPlayerRow="";
+  ready=false;
 
-  document.getElementById("game").hidden = true;
-  document.getElementById("entry").hidden = false;
-  document.getElementById("players").innerHTML = "";
+  document.getElementById("game").hidden=true;
+  document.getElementById("entry").hidden=false;
+  document.getElementById("players").innerHTML="";
 
   say("از اتاق خارج شدی.");
 
- } catch (error) {
-  say("خطا در خروج از اتاق: " + error.message);
+ }catch(error){
+  say("خطا در خروج از اتاق: "+error.message);
  }
 }
 
-/* شروع */
 say("اتصال Appwrite آماده است. نام خود را وارد کن.");
-
 </script>
 </body>
 </html>
