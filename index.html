@@ -8,39 +8,20 @@
 <script src="https://cdn.jsdelivr.net/npm/appwrite@29.0.0"></script>
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;padding:18px;min-height:100vh;
- background:radial-gradient(circle at top,#29202a,#090a0e 65%);
- color:#fff;font-family:Tahoma,Arial,sans-serif
-}
+body{margin:0;padding:18px;min-height:100vh;background:radial-gradient(circle at top,#29202a,#090a0e 65%);color:#fff;font-family:Tahoma,Arial,sans-serif}
 main{max-width:560px;margin:auto}
-h1{text-align:center;color:#e8bd60;font-size:34px;letter-spacing:2px}
+h1{text-align:center;color:#e8bd60;font-size:34px}
 .subtitle{text-align:center;color:#b7a58a;margin-bottom:25px}
-.panel{
- background:linear-gradient(145deg,#20202a,#14141c);
- border:1px solid #5d4827;border-radius:17px;
- padding:20px;margin:15px 0;
- box-shadow:0 10px 30px #0007
-}
+.panel{background:linear-gradient(145deg,#20202a,#14141c);border:1px solid #5d4827;border-radius:17px;padding:20px;margin:15px 0}
 h3{color:#e8bd60;margin-top:0}
-input,select,button{
- width:100%;padding:14px;margin:7px 0;
- border:1px solid #4b4235;border-radius:9px;
- font-size:15px;font-family:inherit
-}
+input,select,button{width:100%;padding:14px;margin:7px 0;border:1px solid #4b4235;border-radius:9px;font-size:15px;font-family:inherit}
 input,select{background:#10131c;color:white}
-button{
- background:linear-gradient(120deg,#f0cf78,#b98528);
- color:#17120a;font-weight:bold;cursor:pointer;border:0
-}
+button{background:linear-gradient(120deg,#f0cf78,#b98528);color:#17120a;font-weight:bold;cursor:pointer;border:0}
 button.secondary{background:#343746;color:white}
-button:disabled{opacity:.5;cursor:not-allowed}
+button:disabled{opacity:.5}
 .small{font-size:12px;color:#aaa;line-height:2}
 #players{list-style:none;padding:0}
-#players li{
- background:#292b36;border:1px solid #45404a;
- padding:12px;margin:8px 0;border-radius:9px
-}
+#players li{background:#292b36;border:1px solid #45404a;padding:12px;margin:8px 0;border-radius:9px}
 #message{white-space:pre-wrap;line-height:2;color:#f1ce79}
 .gold{color:#e8bd60}
 .hidden{display:none!important}
@@ -53,71 +34,67 @@ hr{border:0;border-top:1px solid #49404a;margin:20px 0}
 <p class="subtitle">بازی آنلاین مافیا</p>
 
 <div class="panel" id="entry">
- <h3>ورود به بازی</h3>
- <input id="playerName" maxlength="50" placeholder="نام بازیکن">
-
- <hr>
- <h3>ساخت اتاق جدید</h3>
- <label class="small">تعداد بازیکنان</label>
- <select id="maxPlayers">
-  <option value="4">۴ بازیکن</option>
-  <option value="5">۵ بازیکن</option>
-  <option value="6">۶ بازیکن</option>
-  <option value="7">۷ بازیکن</option>
-  <option value="8">۸ بازیکن</option>
-  <option value="9">۹ بازیکن</option>
-  <option value="10">۱۰ بازیکن</option>
-  <option value="11">۱۱ بازیکن</option>
-  <option value="12" selected>۱۲ بازیکن</option>
- </select>
-
- <label class="small">سناریوی بازی</label>
- <select id="scenario">
-  <option value="classic">کلاسیک</option>
-  <option value="commando">تکاور</option>
-  <option value="negotiation">مذاکره</option>
- </select>
-
- <button id="createButton" onclick="createRoom()">ساخت اتاق جدید</button>
-
- <hr>
- <h3>ورود به اتاق دوستان</h3>
- <input id="roomCode" maxlength="20" placeholder="کد اتاق">
- <button class="secondary" id="joinButton" onclick="joinRoom()">ورود به اتاق</button>
+<h3>ورود به بازی</h3>
+<input id="playerName" maxlength="50" placeholder="نام بازیکن">
+<hr>
+<h3>ساخت اتاق جدید</h3>
+<label class="small">تعداد بازیکنان</label>
+<select id="maxPlayers">
+<option value="4">۴ بازیکن</option>
+<option value="5">۵ بازیکن</option>
+<option value="6">۶ بازیکن</option>
+<option value="7">۷ بازیکن</option>
+<option value="8">۸ بازیکن</option>
+<option value="9">۹ بازیکن</option>
+<option value="10">۱۰ بازیکن</option>
+<option value="11">۱۱ بازیکن</option>
+<option value="12" selected>۱۲ بازیکن</option>
+</select>
+<label class="small">سناریوی بازی</label>
+<select id="scenario">
+<option value="classic">کلاسیک</option>
+<option value="commando">تکاور</option>
+<option value="negotiation">مذاکره</option>
+</select>
+<button id="createButton" onclick="createRoom()">ساخت اتاق جدید</button>
+<hr>
+<h3>ورود به اتاق دوستان</h3>
+<input id="roomCode" maxlength="20" placeholder="کد اتاق">
+<button class="secondary" id="joinButton" onclick="joinRoom()">ورود به اتاق</button>
 </div>
 
 <div class="panel hidden" id="game">
- <h3>اتاق بازی</h3>
- <p>کد اتاق: <b class="gold" id="roomLabel"></b></p>
- <p class="small" id="hostLabel"></p>
- <p class="small" id="capacityLabel"></p>
- <p class="small" id="scenarioLabel"></p>
- <hr>
- <h3>بازیکنان حاضر</h3>
- <ul id="players"></ul>
- <button id="readyButton" onclick="setReady()">آماده‌ام</button>
- <button class="secondary" onclick="leaveRoom()">خروج از اتاق</button>
+<h3>اتاق بازی</h3>
+<p>کد اتاق: <b class="gold" id="roomLabel"></b></p>
+<p class="small" id="hostLabel"></p>
+<p class="small" id="capacityLabel"></p>
+<p class="small" id="scenarioLabel"></p>
+<hr>
+<h3>بازیکنان حاضر</h3>
+<ul id="players"></ul>
+<button id="readyButton" onclick="setReady()">آماده‌ام</button>
+<button class="secondary" onclick="leaveRoom()">خروج از اتاق</button>
+<button class="secondary" onclick="copyTestJWT()">کپی توکن تست (JWT)</button>
+<p class="small">توکن را محرمانه نگه دار و فقط در Header درخواست تست Appwrite استفاده کن.</p>
 </div>
 
-<div class="panel">
- <p id="message">در حال اتصال به بازی...</p>
-</div>
+<div class="panel"><p id="message">در حال اتصال به بازی...</p></div>
 </main>
 
 <script>
 "use strict";
 
 const CFG={
- endpoint:"https://fra.cloud.appwrite.io/v1",
- project:"6b07ab18000a7a4b0bcc",
- database:"6b07af6f000798319ab0",
- rooms:"6b07af9d00191c9f315e",
- players:"6b07b22000258b36e472"
+endpoint:"https://fra.cloud.appwrite.io/v1",
+project:"6b07ab18000a7a4b0bcc",
+database:"6b07af6f000798319ab0",
+rooms:"6b07af9d00191c9f315e",
+players:"6b07b22000258b36e472"
 };
 
 const client=new Appwrite.Client()
- .setEndpoint(CFG.endpoint)
- .setProject(CFG.project);
+.setEndpoint(CFG.endpoint)
+.setProject(CFG.project);
 
 const account=new Appwrite.Account(client);
 const db=new Appwrite.TablesDB(client);
@@ -133,329 +110,313 @@ let ready=false;
 let subscription=null;
 
 function say(message){
- document.getElementById("message").textContent=message;
+document.getElementById("message").textContent=message;
 }
 
 function getName(){
- return document.getElementById("playerName").value.trim();
+return document.getElementById("playerName").value.trim();
 }
 
 function makeCode(){
- return Math.random().toString(36).substring(2,8).toUpperCase();
+return Math.random().toString(36).substring(2,8).toUpperCase();
 }
 
 function scenarioName(value){
- const names={
-  classic:"کلاسیک",
-  commando:"تکاور",
-  negotiation:"مذاکره"
- };
- return names[value]||"کلاسیک";
+const names={classic:"کلاسیک",commando:"تکاور",negotiation:"مذاکره"};
+return names[value]||"کلاسیک";
 }
 
 async function ensureAuth(){
- try{
-  let info;
-  try{
-   info=await account.get();
-  }catch(e){
-   await account.createAnonymousSession();
-   info=await account.get();
-  }
-  userId=info.$id;
-  say("ورود امن انجام شد. آماده بازی هستی.");
-  return true;
- }catch(error){
-  say("خطا در ورود ناشناس:\n"+error.message);
-  return false;
- }
+try{
+let info;
+try{
+info=await account.get();
+}catch(e){
+await account.createAnonymousSession();
+info=await account.get();
+}
+userId=info.$id;
+say("ورود امن انجام شد. آماده بازی هستی.");
+return true;
+}catch(error){
+say("خطا در ورود ناشناس:\n"+error.message);
+return false;
+}
 }
 
 async function stopSubscription(){
- if(subscription){
-  await subscription();
-  subscription=null;
- }
+if(subscription){
+await subscription();
+subscription=null;
+}
 }
 
 async function createRoom(){
- const button=document.getElementById("createButton");
+const button=document.getElementById("createButton");
+try{
+if(!userId)return say("ورود به حساب در حال انجام است. چند لحظه صبر کن.");
+const name=getName();
+if(!name)return say("ابتدا نام بازیکن را وارد کن.");
 
- try{
-  if(!userId){
-   return say("ورود به حساب در حال انجام است. چند لحظه صبر کن.");
-  }
+const maxplayers=Number(document.getElementById("maxPlayers").value);
+const scenario=document.getElementById("scenario").value;
+if(maxplayers<4||maxplayers>12)return say("تعداد بازیکنان باید بین ۴ تا ۱۲ باشد.");
 
-  const name=getName();
-  if(!name)return say("ابتدا نام بازیکن را وارد کن.");
+button.disabled=true;
+say("در حال ساخت اتاق...");
+const code=makeCode();
 
-  const maxplayers=Number(
-   document.getElementById("maxPlayers").value
-  );
-  const scenario=document.getElementById("scenario").value;
+await db.createRow({
+databaseId:CFG.database,
+tableId:CFG.rooms,
+rowId:Appwrite.ID.unique(),
+data:{
+roomcode:code,
+hostId:userId,
+status:"waiting",
+scenario:scenario,
+assistantModeratorId:"",
+winner:"",
+maxplayers:maxplayers,
+currentphase:"lobby"
+}
+});
 
-  if(maxplayers<4||maxplayers>12){
-   return say("تعداد بازیکنان باید بین ۴ تا ۱۲ باشد.");
-  }
+currentHost=userId;
+currentMaxPlayers=maxplayers;
+currentScenario=scenario;
+await enterRoom(code,name);
 
-  button.disabled=true;
-  say("در حال ساخت اتاق...");
-
-  const code=makeCode();
-
-  await db.createRow({
-   databaseId:CFG.database,
-   tableId:CFG.rooms,
-   rowId:Appwrite.ID.unique(),
-   data:{
-    roomcode:code,
-    hostId:userId,
-    status:"waiting",
-    scenario:scenario,
-    assistantModeratorId:"",
-    winner:"",
-    maxplayers:maxplayers,
-    currentphase:"lobby"
-   }
-  });
-
-  currentHost=userId;
-  currentMaxPlayers=maxplayers;
-  currentScenario=scenario;
-
-  await enterRoom(code,name);
-
- }catch(error){
-  say("خطا در ساخت اتاق:\n"+error.message);
- }finally{
-  button.disabled=false;
- }
+}catch(error){
+say("خطا در ساخت اتاق:\n"+error.message);
+}finally{
+button.disabled=false;
+}
 }
 
 async function joinRoom(){
- const button=document.getElementById("joinButton");
+const button=document.getElementById("joinButton");
+try{
+if(!userId)return say("ورود به حساب در حال انجام است. چند لحظه صبر کن.");
 
- try{
-  if(!userId){
-   return say("ورود به حساب در حال انجام است. چند لحظه صبر کن.");
-  }
+const name=getName();
+const code=document.getElementById("roomCode").value.trim().toUpperCase();
+if(!name||!code)return say("نام بازیکن و کد اتاق را وارد کن.");
 
-  const name=getName();
-  const code=document.getElementById("roomCode").value.trim().toUpperCase();
+button.disabled=true;
+say("در حال بررسی اتاق...");
 
-  if(!name||!code){
-   return say("نام بازیکن و کد اتاق را وارد کن.");
-  }
+const result=await db.listRows({
+databaseId:CFG.database,
+tableId:CFG.rooms,
+queries:[
+Appwrite.Query.equal("roomcode",code),
+Appwrite.Query.limit(1)
+]
+});
 
-  button.disabled=true;
-  say("در حال بررسی اتاق...");
+const room=result.rows[0];
+if(!room)return say("اتاقی با این کد پیدا نشد.");
+if(room.status!=="waiting")return say("این اتاق در حال بازی است.");
 
-  const result=await db.listRows({
-   databaseId:CFG.database,
-   tableId:CFG.rooms,
-   queries:[
-    Appwrite.Query.equal("roomcode",code),
-    Appwrite.Query.limit(1)
-   ]
-  });
+currentHost=room.hostId;
+currentMaxPlayers=Number(room.maxplayers)||12;
+currentScenario=room.scenario||"classic";
+await enterRoom(code,name);
 
-  const room=result.rows[0];
-
-  if(!room)return say("اتاقی با این کد پیدا نشد.");
-  if(room.status!=="waiting")return say("این اتاق در حال بازی است.");
-
-  currentHost=room.hostId;
-  currentMaxPlayers=Number(room.maxplayers)||12;
-  currentScenario=room.scenario||"classic";
-
-  await enterRoom(code,name);
-
- }catch(error){
-  say("خطا در ورود به اتاق:\n"+error.message);
- }finally{
-  button.disabled=false;
- }
+}catch(error){
+say("خطا در ورود به اتاق:\n"+error.message);
+}finally{
+button.disabled=false;
+}
 }
 
 async function enterRoom(code,name){
- try{
-  await stopSubscription();
-  currentRoom=code;
+try{
+await stopSubscription();
+currentRoom=code;
 
-  const existing=await db.listRows({
-   databaseId:CFG.database,
-   tableId:CFG.players,
-   queries:[
-    Appwrite.Query.equal("roomcode",code),
-    Appwrite.Query.equal("UserId",userId),
-    Appwrite.Query.limit(1)
-   ]
-  });
+const existing=await db.listRows({
+databaseId:CFG.database,
+tableId:CFG.players,
+queries:[
+Appwrite.Query.equal("roomcode",code),
+Appwrite.Query.equal("UserId",userId),
+Appwrite.Query.limit(1)
+]
+});
 
-  const mine=existing.rows[0];
+const mine=existing.rows[0];
 
-  if(mine){
-   myPlayerRow=mine.$id;
-   ready=Boolean(mine.isReady);
-  }else{
-   const count=await db.listRows({
-    databaseId:CFG.database,
-    tableId:CFG.players,
-    queries:[
-     Appwrite.Query.equal("roomcode",code),
-     Appwrite.Query.limit(100)
-    ]
-   });
+if(mine){
+myPlayerRow=mine.$id;
+ready=Boolean(mine.isReady);
+}else{
+const count=await db.listRows({
+databaseId:CFG.database,
+tableId:CFG.players,
+queries:[
+Appwrite.Query.equal("roomcode",code),
+Appwrite.Query.limit(100)
+]
+});
 
-   if(count.rows.length>=currentMaxPlayers){
-    currentRoom="";
-    return say("ظرفیت این اتاق تکمیل شده است.");
-   }
+if(count.rows.length>=currentMaxPlayers){
+currentRoom="";
+return say("ظرفیت این اتاق تکمیل شده است.");
+}
 
-   const created=await db.createRow({
-    databaseId:CFG.database,
-    tableId:CFG.players,
-    rowId:Appwrite.ID.unique(),
-    data:{
-     roomcode:code,
-     PlayerName:name,
-     UserId:userId,
-     isReady:false,
-     isAlive:true,
-     isSilenced:false,
-     canVote:true,
-     hasSpoken:false,
-     isModerator:false
-    }
-   });
+const created=await db.createRow({
+databaseId:CFG.database,
+tableId:CFG.players,
+rowId:Appwrite.ID.unique(),
+data:{
+roomcode:code,
+PlayerName:name,
+UserId:userId,
+isReady:false,
+isAlive:true,
+isSilenced:false,
+canVote:true,
+hasSpoken:false,
+isModerator:false
+}
+});
 
-   myPlayerRow=created.$id;
-   ready=false;
-  }
+myPlayerRow=created.$id;
+ready=false;
+}
 
-  document.getElementById("entry").classList.add("hidden");
-  document.getElementById("game").classList.remove("hidden");
-  document.getElementById("roomLabel").textContent=code;
+document.getElementById("entry").classList.add("hidden");
+document.getElementById("game").classList.remove("hidden");
+document.getElementById("roomLabel").textContent=code;
 
-  document.getElementById("capacityLabel").textContent=
-   "ظرفیت اتاق: "+currentMaxPlayers+" بازیکن";
+document.getElementById("capacityLabel").textContent="ظرفیت اتاق: "+currentMaxPlayers+" بازیکن";
+document.getElementById("scenarioLabel").textContent="سناریو: "+scenarioName(currentScenario);
+document.getElementById("hostLabel").textContent=currentHost===userId?"شما میزبان اصلی اتاق هستید.":"شما بازیکن این اتاق هستید.";
 
-  document.getElementById("scenarioLabel").textContent=
-   "سناریو: "+scenarioName(currentScenario);
+updateReadyButton();
+await refreshPlayers();
 
-  document.getElementById("hostLabel").textContent=
-   currentHost===userId
-   ?"شما میزبان اصلی اتاق هستید."
-   :"شما بازیکن این اتاق هستید.";
+subscription=realtime.subscribe(
+Appwrite.Channel.tablesdb(CFG.database).table(CFG.players).row(),
+response=>{
+if(response.payload&&response.payload.roomcode===currentRoom){
+refreshPlayers();
+}
+}
+);
 
-  updateReadyButton();
-  await refreshPlayers();
+say("با موفقیت وارد اتاق شدی.");
 
-  subscription=realtime.subscribe(
-   Appwrite.Channel.tablesdb(CFG.database).table(CFG.players).row(),
-   response=>{
-    if(response.payload &&
-       response.payload.roomcode===currentRoom){
-     refreshPlayers();
-    }
-   }
-  );
-
-  say("با موفقیت وارد اتاق شدی.");
-
- }catch(error){
-  say("خطا در ورود به اتاق:\n"+error.message);
- }
+}catch(error){
+say("خطا در ورود به اتاق:\n"+error.message);
+}
 }
 
 function updateReadyButton(){
- document.getElementById("readyButton").textContent=
-  ready?"لغو آمادگی":"آماده‌ام";
+document.getElementById("readyButton").textContent=ready?"لغو آمادگی":"آماده‌ام";
 }
 
 async function refreshPlayers(){
- if(!currentRoom)return;
+if(!currentRoom)return;
+try{
+const result=await db.listRows({
+databaseId:CFG.database,
+tableId:CFG.players,
+queries:[
+Appwrite.Query.equal("roomcode",currentRoom),
+Appwrite.Query.limit(100)
+]
+});
 
- try{
-  const result=await db.listRows({
-   databaseId:CFG.database,
-   tableId:CFG.players,
-   queries:[
-    Appwrite.Query.equal("roomcode",currentRoom),
-    Appwrite.Query.limit(100)
-   ]
-  });
+const list=document.getElementById("players");
+list.innerHTML="";
 
-  const list=document.getElementById("players");
-  list.innerHTML="";
+result.rows.forEach(player=>{
+const li=document.createElement("li");
+li.textContent=player.PlayerName+(player.isReady?" — آماده":" — در انتظار")+(player.UserId===currentHost?" — میزبان":"");
+list.appendChild(li);
+});
 
-  result.rows.forEach(player=>{
-   const li=document.createElement("li");
-   li.textContent=player.PlayerName+
-    (player.isReady?" — آماده":" — در انتظار")+
-    (player.UserId===currentHost?" — میزبان":"");
-   list.appendChild(li);
-  });
-
-  if(result.rows.length===0){
-   const li=document.createElement("li");
-   li.textContent="هنوز بازیکنی وارد نشده است.";
-   list.appendChild(li);
-  }
-
- }catch(error){
-  say("خطا در دریافت بازیکنان:\n"+error.message);
- }
+if(result.rows.length===0){
+const li=document.createElement("li");
+li.textContent="هنوز بازیکنی وارد نشده است.";
+list.appendChild(li);
+}
+}catch(error){
+say("خطا در دریافت بازیکنان:\n"+error.message);
+}
 }
 
 async function setReady(){
- try{
-  if(!myPlayerRow)return say("بازیکن پیدا نشد.");
+try{
+if(!myPlayerRow)return say("بازیکن پیدا نشد.");
+const newReady=!ready;
 
-  const newReady=!ready;
+await db.updateRow({
+databaseId:CFG.database,
+tableId:CFG.players,
+rowId:myPlayerRow,
+data:{isReady:newReady}
+});
 
-  await db.updateRow({
-   databaseId:CFG.database,
-   tableId:CFG.players,
-   rowId:myPlayerRow,
-   data:{isReady:newReady}
-  });
+ready=newReady;
+updateReadyButton();
+say(ready?"وضعیت شما: آماده":"آمادگی لغو شد");
+await refreshPlayers();
 
-  ready=newReady;
-  updateReadyButton();
-  say(ready?"وضعیت شما: آماده":"آمادگی لغو شد");
-  await refreshPlayers();
+}catch(error){
+say("خطا در تغییر وضعیت:\n"+error.message);
+}
+}
 
- }catch(error){
-  say("خطا در تغییر وضعیت:\n"+error.message);
- }
+async function copyTestJWT(){
+try{
+const result=await account.createJWT();
+const token=result.jwt;
+
+if(navigator.clipboard&&navigator.clipboard.writeText){
+await navigator.clipboard.writeText(token);
+}else{
+const field=document.createElement("textarea");
+field.value=token;
+field.style.position="fixed";
+field.style.opacity="0";
+document.body.appendChild(field);
+field.select();
+document.execCommand("copy");
+field.remove();
+}
+
+say("توکن JWT کپی شد. آن را فقط در Header تست Appwrite قرار بده و برای کسی ارسال نکن.");
+
+}catch(error){
+say("خطا در گرفتن یا کپی توکن: "+error.message);
+}
 }
 
 async function leaveRoom(){
- try{
-  await stopSubscription();
+try{
+await stopSubscription();
+currentRoom="";
+currentHost="";
+myPlayerRow="";
+ready=false;
 
-  currentRoom="";
-  currentHost="";
-  myPlayerRow="";
-  ready=false;
+document.getElementById("game").classList.add("hidden");
+document.getElementById("entry").classList.remove("hidden");
+document.getElementById("players").innerHTML="";
+say("از اتاق خارج شدی.");
 
-  document.getElementById("game").classList.add("hidden");
-  document.getElementById("entry").classList.remove("hidden");
-  document.getElementById("players").innerHTML="";
-
-  say("از اتاق خارج شدی.");
-
- }catch(error){
-  say("خطا در خروج:\n"+error.message);
- }
+}catch(error){
+say("خطا در خروج:\n"+error.message);
+}
 }
 
 (async function(){
- const ok=await ensureAuth();
- if(ok){
-  say("اتصال برقرار شد. نام خود را وارد کن.");
- }
+const ok=await ensureAuth();
+if(ok)say("اتصال برقرار شد. نام خود را وارد کن.");
 })();
 </script>
 </body>
