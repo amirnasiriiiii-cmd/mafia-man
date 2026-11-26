@@ -5,116 +5,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MAFIA MAN</title>
-
 <script src="https://cdn.jsdelivr.net/npm/appwrite@29.0.0"></script>
-
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;
- background:#10131d;
- color:#fff;
- font-family:Tahoma,Arial,sans-serif;
- padding:20px;
-}
+body{margin:0;background:#10131d;color:#fff;font-family:Tahoma,Arial,sans-serif;padding:20px}
 main{max-width:520px;margin:auto}
 h1{text-align:center;color:#e6b94f;margin:20px 0}
-.panel{
- background:#1c2232;
- padding:18px;
- border-radius:14px;
- margin:14px 0;
-}
-input,button{
- width:100%;
- padding:14px;
- margin:7px 0;
- border:0;
- border-radius:9px;
- font-size:16px;
-}
+.panel{background:#1c2232;padding:18px;border-radius:14px;margin:14px 0}
+input,button{width:100%;padding:14px;margin:7px 0;border:0;border-radius:9px;font-size:16px}
 input{background:#30394e;color:white}
-button{
- background:#d5a638;
- color:#171717;
- font-weight:bold;
- cursor:pointer;
-}
+button{background:#d5a638;color:#171717;font-weight:bold;cursor:pointer}
 button.secondary{background:#46516b;color:white}
 button:disabled{opacity:.5}
 #players{padding:0;list-style:none}
-#players li{
- background:#30394e;
- padding:12px;
- margin:7px 0;
- border-radius:8px;
-}
+#players li{background:#30394e;padding:12px;margin:7px 0;border-radius:8px}
 .small{color:#aeb8ca;font-size:13px}
-#message{
- white-space:pre-wrap;
- line-height:1.8;
- color:#f4cf70;
-}
+#message{white-space:pre-wrap;line-height:1.8;color:#f4cf70}
 </style>
 </head>
-
 <body>
 <main>
-
 <h1>MAFIA MAN</h1>
 
 <div class="panel" id="entry">
- <h3>ورود به بازی آنلاین</h3>
-
- <input id="playerName" placeholder="نام بازیکن">
-
- <button id="createButton" onclick="createRoom()">
- ساخت اتاق جدید
- </button>
-
- <hr>
-
- <input id="roomCode" placeholder="کد اتاق">
-
- <button class="secondary" id="joinButton" onclick="joinRoom()">
- ورود به اتاق
- </button>
-
- <p class="small">
- برای ورود دوستان، کد اتاق را برایشان بفرست.
- </p>
+<h3>ورود به بازی آنلاین</h3>
+<input id="playerName" placeholder="نام بازیکن">
+<button id="createButton" onclick="createRoom()">ساخت اتاق جدید</button>
+<hr>
+<input id="roomCode" placeholder="کد اتاق">
+<button class="secondary" id="joinButton" onclick="joinRoom()">ورود به اتاق</button>
+<p class="small">برای ورود دوستان، کد اتاق را برایشان بفرست.</p>
 </div>
 
 <div class="panel" id="game" hidden>
- <h3>اتاق بازی</h3>
-
- <p>کد اتاق: <b id="roomLabel"></b></p>
-
- <p class="small" id="hostLabel"></p>
-
- <h3>بازیکنان حاضر</h3>
-
- <ul id="players"></ul>
-
- <button id="readyButton" onclick="setReady()">
- آماده‌ام
- </button>
-
- <button class="secondary" onclick="leaveRoom()">
- خروج از اتاق
- </button>
+<h3>اتاق بازی</h3>
+<p>کد اتاق: <b id="roomLabel"></b></p>
+<p class="small" id="hostLabel"></p>
+<h3>بازیکنان حاضر</h3>
+<ul id="players"></ul>
+<button id="readyButton" onclick="setReady()">آماده‌ام</button>
+<button class="secondary" onclick="leaveRoom()">خروج از اتاق</button>
 </div>
 
 <div class="panel">
- <p id="message">در حال آماده‌سازی اتصال...</p>
+<p id="message">در حال آماده‌سازی اتصال...</p>
 </div>
-
 </main>
 
 <script>
 "use strict";
 
-/* تنظیمات پروژه Appwrite */
 const CFG = {
  endpoint: "https://fra.cloud.appwrite.io/v1",
  project: "6b07ab18000a7a4b0bcc",
@@ -123,7 +63,6 @@ const CFG = {
  players: "6b07b22000258b36e472"
 };
 
-/* اتصال به Appwrite */
 const client = new Appwrite.Client()
  .setEndpoint(CFG.endpoint)
  .setProject(CFG.project);
@@ -131,14 +70,12 @@ const client = new Appwrite.Client()
 const db = new Appwrite.TablesDB(client);
 const realtime = new Appwrite.Realtime(client);
 
-/* اطلاعات بازیکن */
 let currentRoom = "";
 let currentHost = "";
 let myPlayerRow = "";
 let subscription = null;
 let ready = false;
 
-/* شناسه ثابت این دستگاه */
 let userId = localStorage.getItem("mafia_user_id");
 
 if (!userId) {
@@ -146,24 +83,18 @@ if (!userId) {
  localStorage.setItem("mafia_user_id", userId);
 }
 
-/* نمایش پیام */
 function say(message) {
  document.getElementById("message").textContent = message;
 }
 
-/* دریافت نام */
 function getName() {
  return document.getElementById("playerName").value.trim();
 }
 
-/* ساخت کد اتاق */
 function makeCode() {
- return Math.random().toString(36)
-  .substring(2, 8)
-  .toUpperCase();
+ return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-/* لغو اشتراک قبلی */
 async function stopSubscription() {
  if (subscription) {
   await subscription.unsubscribe();
@@ -171,7 +102,6 @@ async function stopSubscription() {
  }
 }
 
-/* ساخت اتاق */
 async function createRoom() {
  try {
   const name = getName();
@@ -189,14 +119,13 @@ async function createRoom() {
    tableId: CFG.rooms,
    rowId: Appwrite.ID.unique(),
    data: {
-    room_code: code,
+    roomcode: code,
     host_id: userId,
     status: "waiting"
    }
   });
 
   currentHost = userId;
-
   await enterRoom(code, name);
 
  } catch (error) {
@@ -204,13 +133,10 @@ async function createRoom() {
  }
 }
 
-/* ورود به اتاق */
 async function joinRoom() {
  try {
   const name = getName();
-
-  const code = document.getElementById("roomCode")
-   .value.trim().toUpperCase();
+  const code = document.getElementById("roomCode").value.trim().toUpperCase();
 
   if (!name || !code) {
    return say("نام بازیکن و کد اتاق را وارد کن.");
@@ -222,7 +148,7 @@ async function joinRoom() {
    databaseId: CFG.database,
    tableId: CFG.rooms,
    queries: [
-    Appwrite.Query.equal("room_code", code),
+    Appwrite.Query.equal("roomcode", code),
     Appwrite.Query.limit(1)
    ]
   });
@@ -234,7 +160,6 @@ async function joinRoom() {
   }
 
   currentHost = room.host_id;
-
   await enterRoom(code, name);
 
  } catch (error) {
@@ -242,11 +167,9 @@ async function joinRoom() {
  }
 }
 
-/* ورود و ثبت بازیکن در اتاق */
 async function enterRoom(code, name) {
  try {
   await stopSubscription();
-
   currentRoom = code;
 
   const existing = await db.listRows({
@@ -264,7 +187,6 @@ async function enterRoom(code, name) {
   if (mine) {
    myPlayerRow = mine.$id;
    ready = Boolean(mine.is_ready);
-
   } else {
    const created = await db.createRow({
     databaseId: CFG.database,
@@ -285,7 +207,6 @@ async function enterRoom(code, name) {
 
   document.getElementById("entry").hidden = true;
   document.getElementById("game").hidden = false;
-
   document.getElementById("roomLabel").textContent = code;
 
   document.getElementById("hostLabel").textContent =
@@ -298,12 +219,10 @@ async function enterRoom(code, name) {
 
   await refreshPlayers();
 
-  /* اتصال زنده بازیکنان */
   subscription = await realtime.subscribe(
    Appwrite.Channel.tablesdb(CFG.database)
     .table(CFG.players)
     .row(),
-
    response => {
     if (
      response.payload &&
@@ -321,7 +240,6 @@ async function enterRoom(code, name) {
  }
 }
 
-/* دریافت و نمایش بازیکنان */
 async function refreshPlayers() {
  if (!currentRoom) return;
 
@@ -337,16 +255,13 @@ async function refreshPlayers() {
 
   const members = result.rows;
   const list = document.getElementById("players");
-
   list.innerHTML = "";
 
   members.forEach(player => {
    const li = document.createElement("li");
-
    li.textContent =
     player.player_name +
     (player.is_ready ? " — آماده" : " — در انتظار");
-
    list.appendChild(li);
   });
 
@@ -361,7 +276,6 @@ async function refreshPlayers() {
  }
 }
 
-/* تغییر وضعیت آمادگی */
 async function setReady() {
  try {
   if (!myPlayerRow) {
@@ -385,7 +299,6 @@ async function setReady() {
    ready ? "لغو آمادگی" : "آماده‌ام";
 
   say(ready ? "وضعیت شما: آماده" : "وضعیت شما: آماده نیست");
-
   await refreshPlayers();
 
  } catch (error) {
@@ -393,7 +306,6 @@ async function setReady() {
  }
 }
 
-/* خروج از اتاق */
 async function leaveRoom() {
  try {
   await stopSubscription();
@@ -405,7 +317,6 @@ async function leaveRoom() {
 
   document.getElementById("game").hidden = true;
   document.getElementById("entry").hidden = false;
-
   document.getElementById("players").innerHTML = "";
 
   say("از اتاق خارج شدی.");
@@ -415,9 +326,7 @@ async function leaveRoom() {
  }
 }
 
-/* پیام اولیه */
 say("اتصال Appwrite آماده است. نام خود را وارد کن.");
-
 </script>
 </body>
 </html>
