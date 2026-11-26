@@ -1,322 +1,412 @@
-import { Client, Account, TablesDB, Query, ID } from 'node-appwrite';
 
-const ENDPOINT = process.env.APPWRITE_ENDPOINT;
-const PROJECT_ID = process.env.APPWRITE_PROJECT_ID;
-const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
-const API_KEY = process.env.APPWRITE_API_KEY;
-const TABLES = {
-  rooms: '6b07af9d00191c9f315e',
-  players: '6b07b22000258b36e472',
-  roles: '6b07b38700091cb0fcbe',
-  messages: '6b07b4dd003d807c28e1',
-  votes: '6b07b633002d3cd2c63c',
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAFIA MAN</title>
+<script src="https://cdn.jsdelivr.net/npm/appwrite@29.0.0"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:18px;min-height:100vh;background:radial-gradient(circle at top,#29202a,#090a0e 65%);color:#fff;font-family:Tahoma,Arial,sans-serif}
+main{max-width:560px;margin:auto}
+h1{text-align:center;color:#e8bd60;font-size:34px}
+.subtitle{text-align:center;color:#b7a58a;margin-bottom:25px}
+.panel{background:linear-gradient(145deg,#20202a,#14141c);border:1px solid #5d4827;border-radius:17px;padding:20px;margin:15px 0}
+h3{color:#e8bd60;margin-top:0}
+input,select,button{width:100%;padding:14px;margin:7px 0;border:1px solid #4b4235;border-radius:9px;font-size:15px;font-family:inherit}
+input,select{background:#10131c;color:white}
+button{background:linear-gradient(120deg,#f0cf78,#b98528);color:#17120a;font-weight:bold;cursor:pointer;border:0}
+button.secondary{background:#343746;color:white}
+button:disabled{opacity:.5}
+.small{font-size:12px;color:#aaa;line-height:2}
+#players{list-style:none;padding:0}
+#players li{background:#292b36;border:1px solid #45404a;padding:12px;margin:8px 0;border-radius:9px}
+#message{white-space:pre-wrap;line-height:2;color:#f1ce79}
+.gold{color:#e8bd60}
+.hidden{display:none!important}
+hr{border:0;border-top:1px solid #49404a;margin:20px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>MAFIA MAN</h1>
+<p class="subtitle">بازی آنلاین مافیا</p>
+
+<div class="panel" id="entry">
+<h3>ورود به بازی</h3>
+<input id="playerName" maxlength="50" placeholder="نام بازیکن">
+<hr>
+<h3>ساخت اتاق جدید</h3>
+<label class="small">تعداد بازیکنان</label>
+<select id="maxPlayers">
+<option value="4">۴ بازیکن</option>
+<option value="5">۵ بازیکن</option>
+<option value="6">۶ بازیکن</option>
+<option value="7">۷ بازیکن</option>
+<option value="8">۸ بازیکن</option>
+<option value="9">۹ بازیکن</option>
+<option value="10">۱۰ بازیکن</option>
+<option value="11">۱۱ بازیکن</option>
+<option value="12" selected>۱۲ بازیکن</option>
+</select>
+<label class="small">سناریوی بازی</label>
+<select id="scenario">
+<option value="classic">کلاسیک</option>
+<option value="commando">تکاور</option>
+<option value="negotiation">مذاکره</option>
+</select>
+<button id="createButton" onclick="createRoom()">ساخت اتاق جدید</button>
+<hr>
+<h3>ورود به اتاق دوستان</h3>
+<input id="roomCode" maxlength="20" placeholder="کد اتاق">
+<button class="secondary" id="joinButton" onclick="joinRoom()">ورود به اتاق</button>
+</div>
+
+<div class="panel hidden" id="game">
+<h3>اتاق بازی</h3>
+<p>کد اتاق: <b class="gold" id="roomLabel"></b></p>
+<p class="small" id="hostLabel"></p>
+<p class="small" id="capacityLabel"></p>
+<p class="small" id="scenarioLabel"></p>
+<hr>
+<h3>بازیکنان حاضر</h3>
+<ul id="players"></ul>
+<button id="readyButton" onclick="setReady()">آماده‌ام</button>
+<button class="secondary" onclick="leaveRoom()">خروج از اتاق</button>
+</div>
+
+<div class="panel"><p id="message">در حال اتصال به بازی...</p></div>
+</main>
+
+<script>
+"use strict";
+
+const CFG={
+endpoint:"https://fra.cloud.appwrite.io/v1",
+project:"6b07ab18000a7a4b0bcc",
+database:"6b07af6f000798319ab0",
+rooms:"6b07af9d00191c9f315e",
+players:"6b07b22000258b36e472"
 };
 
-const ROLE_CATALOG = {
-  citizen: { name: 'شهروند ساده', team: 'town', scenarios: ['classic','commando','negotiation'] },
-  doctor: { name: 'پزشک', team: 'town', scenarios: ['classic','commando','negotiation'] },
-  detective: { name: 'کارآگاه', team: 'town', scenarios: ['classic','commando','negotiation'] },
-  ranger: { name: 'تکاور', team: 'town', scenarios: ['classic','commando'] },
-  guard: { name: 'محافظ', team: 'town', scenarios: ['classic','negotiation'] },
-  mayor: { name: 'شهردار', team: 'town', scenarios: ['classic','negotiation'] },
-  judge: { name: 'قاضی', team: 'town', scenarios: ['classic','negotiation'] },
-  psychologist: { name: 'روان‌شناس', team: 'town', scenarios: ['classic','negotiation'] },
-  sniper: { name: 'تک‌تیرانداز', team: 'town', scenarios: ['classic','commando'] },
-  special_detective: { name: 'کارآگاه ویژه', team: 'town', scenarios: ['classic','commando'] },
-  mafia: { name: 'مافیای ساده', team: 'mafia', scenarios: ['classic','commando','negotiation'] },
-  godfather: { name: 'پدرخوانده', team: 'mafia', scenarios: ['classic','commando','negotiation'] },
-  doctor_lecter: { name: 'دکتر لکتر', team: 'mafia', scenarios: ['classic','commando'] },
-  negotiator: { name: 'مذاکره‌کننده', team: 'mafia', scenarios: ['negotiation'] },
-  natasha: { name: 'ناتاشا', team: 'mafia', scenarios: ['classic','negotiation'] },
-  johnny: { name: 'جانی', team: 'mafia', scenarios: ['classic','commando'] },
-  bomber: { name: 'بمب‌گذار', team: 'mafia', scenarios: ['classic','commando'] },
-  poisoner: { name: 'سم‌ساز', team: 'mafia', scenarios: ['classic','negotiation'] },
-  wizard: { name: 'جادوگر', team: 'independent', scenarios: ['classic','negotiation'] },
-  professional_killer: { name: 'قاتل حرفه‌ای', team: 'independent', scenarios: ['classic','commando'] },
-  joker: { name: 'جوکر', team: 'independent', scenarios: ['classic','negotiation'] },
-  werewolf: { name: 'گرگ‌نما', team: 'independent', scenarios: ['classic','commando'] },
-  guardian_angel: { name: 'فرشته نجات', team: 'town', scenarios: ['classic','negotiation'] },
-  jailer: { name: 'زندانبان', team: 'town', scenarios: ['classic','commando'] },
-  spy: { name: 'جاسوس', team: 'town', scenarios: ['classic','negotiation'] },
-  traitor: { name: 'خائن', team: 'mafia', scenarios: ['classic','commando','negotiation'] },
-  bodyguard: { name: 'محافظ شخصی', team: 'town', scenarios: ['classic','commando','negotiation'] },
+const client=new Appwrite.Client()
+.setEndpoint(CFG.endpoint)
+.setProject(CFG.project);
+
+const account=new Appwrite.Account(client);
+const db=new Appwrite.TablesDB(client);
+const realtime=new Appwrite.Realtime(client);
+
+let userId=null;
+let currentRoom="";
+let currentHost="";
+let myPlayerRow="";
+let currentMaxPlayers=12;
+let currentScenario="classic";
+let ready=false;
+let subscription=null;
+
+function say(message){
+document.getElementById("message").textContent=message;
+}
+
+function getName(){
+return document.getElementById("playerName").value.trim();
+}
+
+function makeCode(){
+return Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+function scenarioName(value){
+const names={
+classic:"کلاسیک",
+commando:"تکاور",
+negotiation:"مذاکره"
 };
-
-function json(res, status, data) { return res.json(data, status); }
-function makeClients(jwt) {
-  const admin = new Client().setEndpoint(ENDPOINT).setProject(PROJECT_ID).setKey(API_KEY);
-  const user = new Client().setEndpoint(ENDPOINT).setProject(PROJECT_ID).setJWT(jwt);
-  return { db: new TablesDB(admin), account: new Account(user) };
-}
-function readJwt(req) {
-  const h = req.headers || {};
-  return h['x-appwrite-user-jwt'] || h['X-Appwrite-User-JWT'] || h['x-appwrite-user-jwt'.toLowerCase()] || '';
-}
-async function rows(db, table, roomcode, extra = []) {
-  const q = [Query.equal('roomcode', roomcode), Query.limit(100), ...extra];
-  const out = await db.listRows({ databaseId: DATABASE_ID, tableId: table, queries: q });
-  return out.rows || [];
-}
-async function one(db, table, roomcode, field, value) {
-  const found = await rows(db, table, roomcode, [Query.equal(field, value)]);
-  return found[0] || null;
-}
-async function update(db, table, row, data) {
-  return db.updateRow({ databaseId: DATABASE_ID, tableId: table, rowId: row.$id, data });
-}
-async function create(db, table, data) {
-  return db.createRow({ databaseId: DATABASE_ID, tableId: table, rowId: ID.unique(), data });
-}
-async function remove(db, table, row) {
-  return db.deleteRow({ databaseId: DATABASE_ID, tableId: table, rowId: row.$id });
-}
-function shuffle(a) {
-  const x = [...a];
-  for (let i = x.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [x[i], x[j]] = [x[j], x[i]]; }
-  return x;
-}
-function makeComposition(players, scenario) {
-  const n = players.length;
-  if (n < 4 || n > 12) throw new Error('تعداد بازیکنان باید بین ۴ تا ۱۲ نفر باشد.');
-  if (!['classic', 'commando', 'negotiation'].includes(scenario)) scenario = 'classic';
-
-  // Team sizes are fixed before role selection, so the final composition
-  // can never exceed or fall short of the number of players.
-  const mafiaCount = n <= 5 ? 1 : n <= 8 ? 2 : n <= 10 ? 3 : 4;
-  const independentCount = n <= 6 ? 0 : n <= 10 ? 1 : 2;
-  const townCount = n - mafiaCount - independentCount;
-  const selected = [];
-  const addFrom = (pool, count, team) => {
-    const eligible = shuffle(pool.filter(id =>
-      ROLE_CATALOG[id] &&
-      ROLE_CATALOG[id].team === team &&
-      ROLE_CATALOG[id].scenarios.includes(scenario) &&
-      !selected.includes(id)
-    ));
-    for (const id of eligible.slice(0, count)) selected.push(id);
-  };
-
-  // Mafia: Godfather is guaranteed; remaining mafia seats are scenario-aware.
-  selected.push('godfather');
-  const mafiaPool = scenario === 'negotiation'
-    ? ['negotiator', 'natasha', 'poisoner', 'mafia', 'traitor']
-    : scenario === 'commando'
-      ? ['johnny', 'bomber', 'doctor_lecter', 'mafia', 'traitor']
-      : ['mafia', 'doctor_lecter', 'natasha', 'johnny', 'bomber', 'poisoner', 'traitor'];
-  addFrom(mafiaPool, mafiaCount - 1, 'mafia');
-
-  // Independent roles are included only in larger rooms to avoid
-  // overloading small games. Their win conditions remain independent.
-  const independentPool = scenario === 'commando'
-    ? ['professional_killer', 'werewolf']
-    : ['wizard', 'professional_killer', 'joker', 'werewolf'];
-  addFrom(independentPool, independentCount, 'independent');
-
-  // Town powers scale with the available town seats; citizens fill the rest.
-  const townPool = scenario === 'commando'
-    ? ['doctor', 'detective', 'ranger', 'sniper', 'special_detective', 'jailer', 'bodyguard', 'spy', 'guardian_angel']
-    : scenario === 'negotiation'
-      ? ['doctor', 'detective', 'guard', 'mayor', 'judge', 'psychologist', 'guardian_angel', 'spy', 'bodyguard']
-      : ['doctor', 'detective', 'guard', 'ranger', 'mayor', 'judge', 'psychologist', 'sniper', 'special_detective', 'guardian_angel', 'jailer', 'spy', 'bodyguard'];
-  const townSpecialCount = Math.min(Math.max(0, townCount - 1), n <= 5 ? 1 : n <= 8 ? 2 : 3);
-  addFrom(townPool, townSpecialCount, 'town');
-  while (selected.filter(id => ROLE_CATALOG[id].team === 'town').length < townCount) selected.push('citizen');
-
-  if (selected.length !== n) throw new Error('خطا در ساخت ترکیب نقش‌ها؛ تعداد نقش‌ها با بازیکنان برابر نیست.');
-  const shuffledPlayers = shuffle(players);
-  const shuffledRoles = shuffle(selected);
-  return shuffledRoles.map((role, i) => ({ role, player: shuffledPlayers[i] }));
-}
-function roleName(id) { return ROLE_CATALOG[id]?.name || id; }
-function isHost(room, userId) { return room.hostId === userId || room.assistantModeratorId === userId; }
-async function alivePlayers(db, roomcode) { return (await rows(db, TABLES.players, roomcode)).filter(p => p.isAlive !== false); }
-async function getRole(db, roomcode, userId) { return one(db, TABLES.roles, roomcode, 'userId', userId); }
-async function setPhase(db, room, phase, seconds) {
-  await update(db, TABLES.rooms, room, { currentphase: phase, phaseStartedAt: new Date().toISOString(), phaseDuration: seconds, isPaused: false });
+return names[value]||"کلاسیک";
 }
 
-export default async ({ req, res, log, error }) => {
-  try {
-    if (!ENDPOINT || !PROJECT_ID || !DATABASE_ID || !API_KEY) return json(res, 500, { ok: false, error: 'تنظیمات محیط Function کامل نیست.' });
-    const body = req.bodyJson || (req.body ? JSON.parse(req.body) : {});
-    const action = String(body.action || '');
-    const roomcode = String(body.roomcode || '').trim().toUpperCase();
-    if (!roomcode) return json(res, 400, { ok: false, error: 'کد اتاق الزامی است.' });
-    const jwt = readJwt(req);
-    if (!jwt) return json(res, 401, { ok: false, error: 'ورود بازیکن تأیید نشد؛ JWT را در Header قرار دهید.' });
-    const { db, account } = makeClients(jwt);
-    const me = await account.get();
-    const userId = me.$id;
-    const room = await one(db, TABLES.rooms, roomcode, 'roomcode', roomcode);
-    if (!room) return json(res, 404, { ok: false, error: 'اتاق پیدا نشد.' });
-    const players = await rows(db, TABLES.players, roomcode);
-    const self = players.find(p => p.UserId === userId);
-    if (!self) return json(res, 403, { ok: false, error: 'شما عضو این اتاق نیستید.' });
-    const moderator = isHost(room, userId) || self.isModerator === true;
+async function ensureAuth(){
+try{
+let info;
+try{
+info=await account.get();
+}catch(e){
+await account.createAnonymousSession();
+info=await account.get();
+}
+userId=info.$id;
+say("ورود امن انجام شد. آماده بازی هستی.");
+return true;
+}catch(error){
+say("خطا در ورود ناشناس:\n"+error.message);
+return false;
+}
+}
 
-    if (action === 'roleCatalog') {
-      return json(res, 200, { ok: true, roles: Object.entries(ROLE_CATALOG).map(([id, r]) => ({ id, name: r.name, team: r.team, scenarios: r.scenarios })) });
-    }
+async function stopSubscription(){
+if(subscription){
+await subscription();
+subscription=null;
+}
+}
 
-    if (action === 'startGame') {
-      if (room.hostId !== userId) return json(res, 403, { ok: false, error: 'فقط میزبان اصلی می‌تواند بازی را شروع کند.' });
-      if (room.status !== 'waiting') return json(res, 409, { ok: false, error: 'وضعیت اتاق اجازه شروع بازی نمی‌دهد.' });
-      if (players.length < 4 || players.length > Math.min(12, Number(room.maxplayers || 12))) return json(res, 400, { ok: false, error: 'تعداد بازیکنان برای شروع مناسب نیست.' });
-      if (players.some(p => p.isReady !== true)) return json(res, 400, { ok: false, error: 'همه بازیکنان باید آماده باشند.' });
-      if (new Set(players.map(p => p.UserId)).size !== players.length) return json(res, 409, { ok: false, error: 'شناسه بازیکنان تکراری است.' });
-      const scenario = ['classic','commando','negotiation'].includes(room.scenario) ? room.scenario : 'classic';
-      const composition = makeComposition(players, scenario);
-      await update(db, TABLES.rooms, room, { status: 'starting' });
-      try {
-        for (const old of await rows(db, TABLES.roles, roomcode)) await remove(db, TABLES.roles, old);
-        for (const item of composition) await create(db, TABLES.roles, { roomcode, userId: item.player.UserId, role: item.role, isRevealed: false });
-        for (const p of players) await update(db, TABLES.players, p, { isAlive: true, isSilenced: false, canVote: true, hasSpoken: false });
-        await update(db, TABLES.rooms, room, { status: 'active', currentphase: 'night', phaseStartedAt: new Date().toISOString(), phaseDuration: Number(room.nightDuration || 60), winner: '' });
-      } catch (e) {
-        await update(db, TABLES.rooms, room, { status: 'waiting' });
-        throw e;
-      }
-      return json(res, 200, { ok: true, message: 'بازی آغاز شد و نقش‌ها به‌صورت محرمانه توزیع شدند.', playerCount: players.length, mafiaCount: composition.filter(x => ROLE_CATALOG[x.role].team === 'mafia').length });
-    }
+async function createRoom(){
+const button=document.getElementById("createButton");
+try{
+if(!userId)return say("ورود به حساب در حال انجام است.");
+const name=getName();
+if(!name)return say("ابتدا نام بازیکن را وارد کن.");
 
-    if (action === 'myRole') {
-      const role = await getRole(db, roomcode, userId);
-      if (!role) return json(res, 404, { ok: false, error: 'نقشی برای شما ثبت نشده است.' });
-      return json(res, 200, { ok: true, role: role.role, roleName: roleName(role.role), team: ROLE_CATALOG[role.role]?.team || 'unknown' });
-    }
+const maxplayers=Number(document.getElementById("maxPlayers").value);
+const scenario=document.getElementById("scenario").value;
 
-    if (action === 'moderatorRoles') {
-      if (!moderator) return json(res, 403, { ok: false, error: 'فقط میزبان یا ناظر مجاز است.' });
-      const roleRows = await rows(db, TABLES.roles, roomcode);
-      return json(res, 200, { ok: true, roles: roleRows.map(r => ({ userId: r.userId, role: r.role, roleName: roleName(r.role) })) });
-    }
+if(maxplayers<4||maxplayers>12)
+return say("تعداد بازیکنان باید بین ۴ تا ۱۲ باشد.");
 
-    if (action === 'getMessages') {
-      const messageRows = await rows(db, TABLES.messages, roomcode);
-      return json(res, 200, { ok: true, messages: messageRows.sort((a,b) => String(a.$createdAt || '').localeCompare(String(b.$createdAt || ''))).slice(-60).map(m => ({ PlayerName: m.PlayerName, content: m.content, phase: m.phase, messageType: m.messageType })) });
-    }
+button.disabled=true;
+say("در حال ساخت اتاق...");
 
-    if (action === 'getState') {
-      const role = await getRole(db, roomcode, userId);
-      const alive = await alivePlayers(db, roomcode);
-      return json(res, 200, { ok: true, room: { status: room.status, phase: room.currentphase, phaseDuration: room.phaseDuration, phaseStartedAt: room.phaseStartedAt, winner: room.winner }, players: players.map(p => ({ PlayerName: p.PlayerName, UserId: p.UserId, isAlive: p.isAlive !== false, isReady: p.isReady === true, isModerator: p.isModerator === true })), myRole: role ? { role: role.role, roleName: roleName(role.role) } : null, aliveCount: alive.length });
-    }
+const code=makeCode();
 
-    if (action === 'nightAction') {
-      if (room.status !== 'active' || room.currentphase !== 'night') return json(res, 409, { ok: false, error: 'اکنون نوبت شب نیست.' });
-      if (self.isAlive === false || self.isSilenced === true) return json(res, 403, { ok: false, error: 'بازیکن حذف‌شده یا ساکت‌شده نمی‌تواند اقدام کند.' });
-      const role = await getRole(db, roomcode, userId);
-      if (!role) return json(res, 403, { ok: false, error: 'نقش شما مشخص نیست.' });
-      const targetId = String(body.targetId || '');
-      if (!targetId || targetId === userId) return json(res, 400, { ok: false, error: 'هدف انتخاب‌شده معتبر نیست.' });
-      const target = players.find(p => p.UserId === targetId && p.isAlive !== false);
-      if (!target) return json(res, 404, { ok: false, error: 'بازیکن هدف زنده پیدا نشد.' });
-      const permitted = ['mafia','godfather','traitor','doctor','detective','ranger','guard','sniper','special_detective','doctor_lecter','negotiator','natasha','johnny','bomber','poisoner','wizard','professional_killer','werewolf','guardian_angel','jailer','spy','bodyguard'];
-      if (!permitted.includes(role.role)) return json(res, 403, { ok: false, error: 'نقش شما توانایی اقدام شبانه ندارد.' });
-      if (['natasha','jailer','wizard'].includes(role.role)) await update(db, TABLES.players, target, { isSilenced: true });
-      if (['detective','special_detective','spy'].includes(role.role)) {
-        const targetRole = await getRole(db, roomcode, targetId);
-        const targetTeam = ROLE_CATALOG[targetRole?.role]?.team || 'unknown';
-        const resultText = role.role === 'spy' ? (targetTeam === 'mafia' ? 'رفتار مشکوک است.' : 'نشانه قطعی از مافیا پیدا نشد.') : (targetTeam === 'mafia' ? 'مافیا' : 'غیرمافیا');
-        const existingCheck = await rows(db, TABLES.votes, roomcode, [Query.equal('voterId', userId), Query.equal('phase', 'night')]);
-        if (existingCheck.length) await update(db, TABLES.votes, existingCheck[0], { targetId, voteType: role.role });
-        else await create(db, TABLES.votes, { roomcode, voterId: userId, targetId, phase: 'night', voteType: role.role });
-        return json(res, 200, { ok: true, message: 'بررسی انجام شد.', result: resultText });
-      }
-      const existing = await rows(db, TABLES.votes, roomcode, [Query.equal('voterId', userId), Query.equal('phase', 'night')]);
-      if (existing.length) await update(db, TABLES.votes, existing[0], { targetId, voteType: role.role });
-      else await create(db, TABLES.votes, { roomcode, voterId: userId, targetId, phase: 'night', voteType: role.role });
-      return json(res, 200, { ok: true, message: 'اقدام شبانه ثبت شد.' });
-    }
+await db.createRow({
+databaseId:CFG.database,
+tableId:CFG.rooms,
+rowId:Appwrite.ID.unique(),
+data:{
+roomcode:code,
+hostId:userId,
+status:"waiting",
+scenario:scenario,
+assistantModeratorId:"",
+winner:"",
+maxplayers:maxplayers,
+currentphase:"lobby"
+}
+});
 
-    if (action === 'submitVote') {
-      if (room.status !== 'active' || room.currentphase !== 'voting') return json(res, 409, { ok: false, error: 'اکنون زمان رأی‌گیری نیست.' });
-      if (self.isAlive === false || self.canVote === false) return json(res, 403, { ok: false, error: 'شما اجازه رأی دادن ندارید.' });
-      const targetId = String(body.targetId || '');
-      if (!players.some(p => p.UserId === targetId && p.isAlive !== false)) return json(res, 404, { ok: false, error: 'هدف رأی معتبر نیست.' });
-      const existing = await rows(db, TABLES.votes, roomcode, [Query.equal('voterId', userId), Query.equal('phase', 'voting')]);
-      for (const v of existing) await remove(db, TABLES.votes, v);
-      await create(db, TABLES.votes, { roomcode, voterId: userId, targetId, phase: 'voting', voteType: 'public' });
-      return json(res, 200, { ok: true, message: 'رأی شما ثبت شد.' });
-    }
+currentHost=userId;
+currentMaxPlayers=maxplayers;
+currentScenario=scenario;
+await enterRoom(code,name);
 
-    if (action === 'sendMessage') {
-      const content = String(body.content || '').trim();
-      if (!content || content.length > 1000) return json(res, 400, { ok: false, error: 'متن پیام باید بین ۱ تا ۱۰۰۰ نویسه باشد.' });
-      if (self.isAlive === false && !moderator) return json(res, 403, { ok: false, error: 'بازیکن حذف‌شده اجازه ارسال پیام عمومی ندارد.' });
-      if (room.currentphase === 'night' && !moderator) return json(res, 403, { ok: false, error: 'در مرحله شب امکان گفتگوی عمومی وجود ندارد.' });
-      await create(db, TABLES.messages, { roomcode, userId, PlayerName: self.PlayerName || '', content, phase: room.currentphase || 'lobby', messageType: 'chat', targetUserId: '', isRead: false });
-      return json(res, 200, { ok: true, message: 'پیام ارسال شد.' });
-    }
+}catch(error){
+say("خطا در ساخت اتاق:\n"+error.message);
+}finally{
+button.disabled=false;
+}
+}
 
-    if (action === 'advancePhase') {
-      if (!moderator) return json(res, 403, { ok: false, error: 'فقط میزبان یا ناظر می‌تواند مرحله را تغییر دهد.' });
-      if (room.status !== 'active') return json(res, 409, { ok: false, error: 'بازی فعال نیست.' });
-      if (room.currentphase === 'night') {
-        const nightVotes = await rows(db, TABLES.votes, roomcode, [Query.equal('phase', 'night')]);
-        const killVotes = nightVotes.filter(v => ['mafia','godfather','johnny','bomber','poisoner','professional_killer','sniper','ranger','werewolf'].includes(v.voteType));
-        const attackCounts = new Map();
-        for (const v of killVotes) attackCounts.set(v.targetId, (attackCounts.get(v.targetId) || 0) + (['mafia','godfather','johnny','bomber','poisoner'].includes(v.voteType) ? 1 : 2));
-        const mafiaTarget = [...attackCounts.entries()].sort((a,b) => b[1]-a[1])[0]?.[0];
-        const protectedTargets = new Set(nightVotes.filter(v => ['doctor','doctor_lecter','guard','guardian_angel','bodyguard'].includes(v.voteType)).map(v => v.targetId));
-        if (mafiaTarget && !protectedTargets.has(mafiaTarget)) {
-          const target = players.find(p => p.UserId === mafiaTarget && p.isAlive !== false);
-          if (target) await update(db, TABLES.players, target, { isAlive: false });
-        }
-        for (const v of nightVotes.filter(v => ['professional_killer','sniper','ranger','werewolf'].includes(v.voteType))) {
-          if (v.targetId !== mafiaTarget && !protectedTargets.has(v.targetId)) {
-            const target = players.find(p => p.UserId === v.targetId && p.isAlive !== false);
-            if (target) await update(db, TABLES.players, target, { isAlive: false });
-          }
-        }
-        for (const p of players) if (p.isSilenced === true) await update(db, TABLES.players, p, { isSilenced: false });
-        const livingAfterNight = await alivePlayers(db, roomcode);
-        const rolesAfterNight = await rows(db, TABLES.roles, roomcode);
-        const teamByUser = new Map(rolesAfterNight.map(r => [r.userId, ROLE_CATALOG[r.role]?.team]));
-        const mafiaAfterNight = livingAfterNight.filter(p => teamByUser.get(p.UserId) === 'mafia').length;
-        const townAfterNight = livingAfterNight.filter(p => teamByUser.get(p.UserId) === 'town').length;
-        if (mafiaAfterNight === 0) {
-          await update(db, TABLES.rooms, room, { status: 'finished', winner: 'town', currentphase: 'finished', phaseStartedAt: new Date().toISOString() });
-        } else if (mafiaAfterNight >= townAfterNight) {
-          await update(db, TABLES.rooms, room, { status: 'finished', winner: 'mafia', currentphase: 'finished', phaseStartedAt: new Date().toISOString() });
-        } else {
-          await setPhase(db, room, 'discussion', Number(room.discussionDuration || 60));
-        }
-      } else if (room.currentphase === 'discussion') {
-        await setPhase(db, room, 'voting', Number(room.votingDuration || 60));
-      } else if (room.currentphase === 'voting') {
-        const votes = await rows(db, TABLES.votes, roomcode, [Query.equal('phase', 'voting')]);
-        const counts = new Map();
-        for (const v of votes) counts.set(v.targetId, (counts.get(v.targetId) || 0) + 1);
-        const sorted = [...counts.entries()].sort((a,b) => b[1]-a[1]);
-        if (sorted.length && (sorted.length === 1 || sorted[0][1] > sorted[1][1])) {
-          const target = players.find(p => p.UserId === sorted[0][0]);
-          if (target) await update(db, TABLES.players, target, { isAlive: false });
-        }
-        const remaining = await alivePlayers(db, roomcode);
-        const roleRows = await rows(db, TABLES.roles, roomcode);
-        const teams = new Map(roleRows.map(r => [r.userId, ROLE_CATALOG[r.role]?.team]));
-        const mafiaAlive = remaining.filter(p => teams.get(p.UserId) === 'mafia').length;
-        const townAlive = remaining.filter(p => teams.get(p.UserId) === 'town').length;
-        const independentAlive = remaining.filter(p => teams.get(p.UserId) === 'independent').length;
-        let winner = '';
-        if (mafiaAlive === 0) winner = 'town';
-        else if (mafiaAlive >= townAlive + independentAlive) winner = 'mafia';
-        if (winner) {
-          await update(db, TABLES.rooms, room, { status: 'finished', winner, currentphase: 'finished', phaseStartedAt: new Date().toISOString() });
-        } else {
-          for (const v of votes) await remove(db, TABLES.votes, v);
-          for (const v of await rows(db, TABLES.votes, roomcode, [Query.equal('phase', 'night')])) await remove(db, TABLES.votes, v);
-          await setPhase(db, room, 'night', Number(room.nightDuration || 60));
-        }
-      } else return json(res, 409, { ok: false, error: 'مرحله فعلی قابل تغییر نیست.' });
-      const refreshedRoom = await one(db, TABLES.rooms, roomcode, 'roomcode', roomcode);
-      return json(res, 200, { ok: true, phase: refreshedRoom?.currentphase || room.currentphase, status: refreshedRoom?.status || room.status, winner: refreshedRoom?.winner || '', message: 'مرحله بازی تغییر کرد.' });
-    }
+async function joinRoom(){
+const button=document.getElementById("joinButton");
+try{
+if(!userId)return say("ورود به حساب در حال انجام است.");
 
-    return json(res, 400, { ok: false, error: 'عملیات نامعتبر است.' });
-  } catch (e) {
-    if (error) error(e?.stack || String(e));
-    return json(res, 500, { ok: false, error: e?.message || 'خطای داخلی Function' });
-  }
-};
+const name=getName();
+const code=document.getElementById("roomCode").value.trim().toUpperCase();
+
+if(!name||!code)
+return say("نام بازیکن و کد اتاق را وارد کن.");
+
+button.disabled=true;
+say("در حال بررسی اتاق...");
+
+const result=await db.listRows({
+databaseId:CFG.database,
+tableId:CFG.rooms,
+queries:[
+Appwrite.Query.equal("roomcode",code),
+Appwrite.Query.limit(1)
+]
+});
+
+const room=result.rows[0];
+
+if(!room)return say("اتاقی با این کد پیدا نشد.");
+if(room.status!=="waiting")return say("این اتاق در حال بازی است.");
+
+currentHost=room.hostId;
+currentMaxPlayers=Number(room.maxplayers)||12;
+currentScenario=room.scenario||"classic";
+
+await enterRoom(code,name);
+
+}catch(error){
+say("خطا در ورود به اتاق:\n"+error.message);
+}finally{
+button.disabled=false;
+}
+}
+
+async function enterRoom(code,name){
+try{
+await stopSubscription();
+currentRoom=code;
+
+const existing=await db.listRows({
+databaseId:CFG.database,
+tableId:CFG.players,
+queries:[
+Appwrite.Query.equal("roomcode",code),
+Appwrite.Query.equal("UserId",userId),
+Appwrite.Query.limit(1)
+]
+});
+
+const mine=existing.rows[0];
+
+if(mine){
+myPlayerRow=mine.$id;
+ready=Boolean(mine.isReady);
+}else{
+const count=await db.listRows({
+databaseId:CFG.database,
+tableId:CFG.players,
+queries:[
+Appwrite.Query.equal("roomcode",code),
+Appwrite.Query.limit(100)
+]
+});
+
+if(count.rows.length>=currentMaxPlayers){
+currentRoom="";
+return say("ظرفیت این اتاق تکمیل شده است.");
+}
+
+const created=await db.createRow({
+databaseId:CFG.database,
+tableId:CFG.players,
+rowId:Appwrite.ID.unique(),
+data:{
+roomcode:code,
+PlayerName:name,
+UserId:userId,
+isReady:false,
+isAlive:true,
+isSilenced:false,
+canVote:true,
+hasSpoken:false,
+isModerator:false
+}
+});
+
+myPlayerRow=created.$id;
+ready=false;
+}
+
+document.getElementById("entry").classList.add("hidden");
+document.getElementById("game").classList.remove("hidden");
+document.getElementById("roomLabel").textContent=code;
+document.getElementById("capacityLabel").textContent="ظرفیت اتاق: "+currentMaxPlayers+" بازیکن";
+document.getElementById("scenarioLabel").textContent="سناریو: "+scenarioName(currentScenario);
+document.getElementById("hostLabel").textContent=
+currentHost===userId?"شما میزبان اصلی اتاق هستید.":"شما بازیکن این اتاق هستید.";
+
+updateReadyButton();
+await refreshPlayers();
+
+subscription=realtime.subscribe(
+Appwrite.Channel.tablesdb(CFG.database).table(CFG.players).row(),
+response=>{
+if(response.payload&&response.payload.roomcode===currentRoom){
+refreshPlayers();
+}
+}
+);
+
+say("با موفقیت وارد اتاق شدی.");
+
+}catch(error){
+say("خطا در ورود به اتاق:\n"+error.message);
+}
+}
+
+function updateReadyButton(){
+document.getElementById("readyButton").textContent=
+ready?"لغو آمادگی":"آماده‌ام";
+}
+
+async function refreshPlayers(){
+if(!currentRoom)return;
+
+try{
+const result=await db.listRows({
+databaseId:CFG.database,
+tableId:CFG.players,
+queries:[
+Appwrite.Query.equal("roomcode",currentRoom),
+Appwrite.Query.limit(100)
+]
+});
+
+const list=document.getElementById("players");
+list.innerHTML="";
+
+result.rows.forEach(player=>{
+const li=document.createElement("li");
+li.textContent=player.PlayerName+
+(player.isReady?" — آماده":" — در انتظار")+
+(player.UserId===currentHost?" — میزبان":"");
+list.appendChild(li);
+});
+
+if(result.rows.length===0){
+const li=document.createElement("li");
+li.textContent="هنوز بازیکنی وارد نشده است.";
+list.appendChild(li);
+}
+}catch(error){
+say("خطا در دریافت بازیکنان:\n"+error.message);
+}
+}
+
+async function setReady(){
+try{
+if(!myPlayerRow)return say("بازیکن پیدا نشد.");
+
+const newReady=!ready;
+
+await db.updateRow({
+databaseId:CFG.database,
+tableId:CFG.players,
+rowId:myPlayerRow,
+data:{isReady:newReady}
+});
+
+ready=newReady;
+updateReadyButton();
+say(ready?"وضعیت شما: آماده":"آمادگی لغو شد");
+await refreshPlayers();
+
+}catch(error){
+say("خطا در تغییر وضعیت:\n"+error.message);
+}
+}
+
+async function leaveRoom(){
+try{
+await stopSubscription();
+currentRoom="";
+currentHost="";
+myPlayerRow="";
+ready=false;
+
+document.getElementById("game").classList.add("hidden");
+document.getElementById("entry").classList.remove("hidden");
+document.getElementById("players").innerHTML="";
+say("از اتاق خارج شدی.");
+
+}catch(error){
+say("خطا در خروج:\n"+error.message);
+}
+}
+
+(async function(){
+const ok=await ensureAuth();
+if(ok)say("اتصال برقرار شد. نام خود را وارد کن.");
+})();
+</script>
+</body>
+</html>
