@@ -1,0 +1,232 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAFIA MAN</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#101018;color:white;
+ font-family:Tahoma,Arial,sans-serif;text-align:center;
+}
+header{
+ padding:28px 10px;background:linear-gradient(135deg,#500000,#171721);
+ border-bottom:2px solid #b18a36;
+}
+h1{color:#e6bd62;font-size:34px;margin:5px}
+h2{color:#e6bd62}
+main{max-width:550px;margin:auto;padding:18px}
+.card{
+ background:#20202b;border:1px solid #48404a;
+ border-radius:15px;padding:18px;margin:15px 0;
+}
+input{
+ width:100%;padding:13px;margin:8px 0;
+ border-radius:9px;border:1px solid #777;
+ background:#12121a;color:white;font-size:16px;
+}
+button{
+ padding:12px 18px;border:0;border-radius:9px;
+ background:#a47b32;color:white;font-size:15px;
+ margin:5px;cursor:pointer;
+}
+button:hover{background:#d09b3e}
+.red{background:#8c2020}
+.timer{font-size:48px;color:#f2c65d;margin:15px}
+.player{
+ padding:12px;background:#30303d;
+ border-radius:8px;margin:7px 0;
+ display:flex;justify-content:space-between;
+}
+#message{color:#e8c36c;min-height:25px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header>
+<h1>MAFIA MAN</h1>
+<p>دنیای بازی آنلاین مافیا</p>
+</header>
+
+<main>
+
+<div class="card">
+<h2>ساخت اتاق بازی</h2>
+<input id="room" placeholder="نام اتاق">
+<input id="host" placeholder="نام مدیر بازی">
+<button onclick="createRoom()">ساخت اتاق</button>
+<p id="roomInfo"></p>
+</div>
+
+<div class="card">
+<h2>بازیکنان</h2>
+<input id="playerName" placeholder="نام بازیکن">
+<button onclick="addPlayer()">افزودن بازیکن</button>
+<div id="players"></div>
+<p id="count">تعداد بازیکنان: ۰</p>
+<button onclick="assignRoles()">تخصیص تصادفی نقش‌ها</button>
+</div>
+
+<div class="card">
+<h2>مرحله بازی</h2>
+<h3 id="stage">آماده شروع</h3>
+<div class="timer" id="timer">60</div>
+<button onclick="startTimer()">شروع مرحله</button>
+<button onclick="nextStage()">مرحله بعد</button>
+<button class="red" onclick="stopTimer()">توقف</button>
+<p id="message"></p>
+</div>
+
+<div class="card">
+<h2>نقش بازیکنان</h2>
+<p>برای نمایش نقش هر بازیکن روی نام او بزنید.</p>
+<div id="roles"></div>
+</div>
+
+<div class="card">
+<h2>مدیریت بازی</h2>
+<button class="red" onclick="resetGame()">شروع مجدد بازی</button>
+</div>
+
+</main>
+
+<script>
+let players=[];
+let stages=["شب","گفتگو","رأی‌گیری"];
+let stageIndex=0;
+let seconds=60;
+let interval=null;
+let roles=[];
+
+function createRoom(){
+ let name=document.getElementById("room").value.trim();
+ let host=document.getElementById("host").value.trim();
+ if(!name||!host){
+ alert("نام اتاق و مدیر را وارد کنید");
+ return;
+ }
+ let code=Math.random().toString(36).substring(2,8).toUpperCase();
+ document.getElementById("roomInfo").innerText=
+ "اتاق "+name+" ساخته شد | کد اتاق: "+code+
+ " | مدیر: "+host;
+}
+
+function addPlayer(){
+ let input=document.getElementById("playerName");
+ let name=input.value.trim();
+ if(!name)return;
+ if(players.includes(name)){
+ alert("این بازیکن قبلاً اضافه شده است");
+ return;
+ }
+ players.push(name);
+ input.value="";
+ renderPlayers();
+}
+
+function renderPlayers(){
+ let box=document.getElementById("players");
+ box.innerHTML="";
+ players.forEach((p,i)=>{
+ let div=document.createElement("div");
+ div.className="player";
+ let span=document.createElement("span");
+ span.innerText=p;
+ let btn=document.createElement("button");
+ btn.className="red";
+ btn.innerText="حذف";
+ btn.onclick=()=>{players.splice(i,1);roles=[];renderPlayers()};
+ div.append(span,btn);
+ box.appendChild(div);
+ });
+ document.getElementById("count").innerText=
+ "تعداد بازیکنان: "+players.length;
+}
+
+function assignRoles(){
+ if(players.length<5){
+ alert("حداقل ۵ بازیکن لازم است");
+ return;
+ }
+ let mafiaCount=Math.max(1,Math.floor(players.length/4));
+ roles=players.map((p,i)=>({
+ name:p,
+ role:i<mafiaCount?"مافیا":
+ i===mafiaCount?"دکتر":
+ i===mafiaCount+1?"کارآگاه":"شهروند"
+ }));
+ for(let i=roles.length-1;i>0;i--){
+ let j=Math.floor(Math.random()*(i+1));
+ [roles[i],roles[j]]=[roles[j],roles[i]];
+ }
+ showRoles();
+ document.getElementById("message").innerText=
+ "نقش‌ها با موفقیت تعیین شدند.";
+}
+
+function showRoles(){
+ let box=document.getElementById("roles");
+ box.innerHTML="";
+ roles.forEach(p=>{
+ let div=document.createElement("div");
+ div.className="player";
+ let name=document.createElement("span");
+ name.innerText=p.name;
+ let btn=document.createElement("button");
+ btn.innerText="مشاهده نقش";
+ btn.onclick=()=>{
+ alert(p.name+" : "+p.role);
+ };
+ div.append(name,btn);
+ box.appendChild(div);
+ });
+}
+
+function startTimer(){
+ stopTimer();
+ interval=setInterval(()=>{
+ if(seconds>0){
+ seconds--;
+ document.getElementById("timer").innerText=seconds;
+ }else{
+ stopTimer();
+ document.getElementById("message").innerText=
+ "زمان مرحله به پایان رسید!";
+ }
+ },1000);
+}
+
+function stopTimer(){
+ if(interval)clearInterval(interval);
+ interval=null;
+}
+
+function nextStage(){
+ stopTimer();
+ stageIndex=(stageIndex+1)%stages.length;
+ seconds=60;
+ document.getElementById("stage").innerText=stages[stageIndex];
+ document.getElementById("timer").innerText=60;
+ document.getElementById("message").innerText=
+ "مرحله "+stages[stageIndex]+" آغاز شد.";
+}
+
+function resetGame(){
+ stopTimer();
+ players=[];
+ roles=[];
+ stageIndex=0;
+ seconds=60;
+ document.getElementById("stage").innerText="آماده شروع";
+ document.getElementById("timer").innerText=60;
+ document.getElementById("roomInfo").innerText="";
+ document.getElementById("message").innerText="";
+ document.getElementById("roles").innerHTML="";
+ renderPlayers();
+}
+</script>
+</body>
+</html>
