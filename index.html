@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -75,7 +76,6 @@ hr{border:0;border-top:1px solid #49404a;margin:18px 0}
 <label class="field-label">شماره موبایل با کد کشور</label>
 <input id="phoneNumber" type="tel" dir="ltr" placeholder="+989121234567">
 <button class="wide" id="sendCodeButton" onclick="startPhoneLogin()">ارسال کد تأیید</button>
-
 <div id="otpArea" class="otp">
 <label class="field-label">کد پیامک‌شده</label>
 <input id="otpCode" inputmode="numeric" maxlength="8" dir="ltr">
@@ -87,7 +87,6 @@ hr{border:0;border-top:1px solid #49404a;margin:18px 0}
 <p class="small">بدون ساخت حساب وارد لابی شو.</p>
 <button class="wide" id="guestButton" onclick="continueAsGuest()">ورود به‌عنوان مهمان</button>
 </div>
-
 <p id="authMessage" class="small"></p>
 </section>
 
@@ -97,7 +96,6 @@ hr{border:0;border-top:1px solid #49404a;margin:18px 0}
 
 <section class="panel" id="entry">
 <h3>ساخت اتاق جدید</h3>
-
 <label class="small">تعداد بازیکنان</label>
 <select id="maxPlayers">
 <option value="4">۴ بازیکن</option>
@@ -117,11 +115,8 @@ hr{border:0;border-top:1px solid #49404a;margin:18px 0}
 <option value="commando">تکاور</option>
 <option value="negotiation">مذاکره</option>
 </select>
-
 <button class="wide" id="createButton" onclick="createRoom()">ساخت اتاق</button>
-
 <hr>
-
 <h3>ورود به اتاق دوستان</h3>
 <input id="roomCode" maxlength="20" placeholder="کد اتاق">
 <button class="wide secondary" id="joinButton" onclick="joinRoom()">ورود به اتاق</button>
@@ -136,40 +131,26 @@ hr{border:0;border-top:1px solid #49404a;margin:18px 0}
 
 <section class="panel hidden" id="game">
 <h3>اتاق بازی</h3>
-
 <p>کد اتاق: <b class="gold" id="roomLabel"></b></p>
 <p id="hostLabel" class="small"></p>
 <p id="capacityLabel" class="small"></p>
 <p id="scenarioLabel" class="small"></p>
-
 <hr>
-
 <h3>بازیکنان حاضر</h3>
 <ul id="players"></ul>
-
 <button class="wide" id="readyButton" onclick="setReady()">آماده‌ام</button>
 <button class="wide secondary" onclick="leaveRoom()">خروج از اتاق</button>
-
 <hr>
-
 <h3>💬 گفت‌وگوی لابی</h3>
 <p class="small">پیام‌های متنی و صوتی پیش از شروع بازی</p>
 <div id="chatBox" class="chat-box" aria-live="polite"></div>
-
 <div class="chat-input">
 <input id="chatInput" maxlength="1000" placeholder="پیام خود را بنویس...">
 <button id="sendChatButton" onclick="sendChat()">ارسال</button>
 </div>
-
 <hr>
-
 <h3>🎙 گفت‌وگوی صوتی</h3>
-<button id="micButton" class="mic"
-onpointerdown="pttDown(event)"
-onpointerup="pttUp(event)"
-onpointercancel="pttUp(event)"
-onpointerleave="pttUp(event)">برای صحبت نگه دار</button>
-
+<button id="micButton" class="mic" onpointerdown="pttDown(event)" onpointerup="pttUp(event)" onpointercancel="pttUp(event)" onpointerleave="pttUp(event)">برای صحبت نگه دار</button>
 <p id="voiceStatus" class="small">میکروفون خاموش است. برای صحبت دکمه را نگه دار.</p>
 <p class="muted">صدا فقط هنگام نگه‌داشتن دکمه ارسال می‌شود. برای استفاده، اجازه میکروفون را فعال کن.</p>
 <div id="audioPeers"></div>
@@ -184,6 +165,7 @@ onpointerleave="pttUp(event)">برای صحبت نگه دار</button>
 <script>
 'use strict';
 
+/* شناسه‌ها از تاریخچه پروژه بازیابی شده‌اند */
 const CFG={
 endpoint:'https://fra.cloud.appwrite.io/v1',
 project:'6b07ab18000a7a4b0bcc',
@@ -213,7 +195,6 @@ let playerSub=null;
 let messageSub=null;
 let lobbyTimer=null;
 let loadingRooms=false;
-
 let peers=new Map();
 let localStream=null;
 let pttActive=false;
@@ -229,28 +210,13 @@ iceServers:[
 
 const $=id=>document.getElementById(id);
 
-function say(t){
-$('message').textContent=t;
-}
-
-function authMessage(t){
-$('authMessage').textContent=t||'';
-}
-
-function getName(){
-return $('welcomeName').value.trim();
-}
-
-function makeCode(){
-return Math.random().toString(36).slice(2,8).toUpperCase();
-}
+function say(t){$('message').textContent=t}
+function authMessage(t){$('authMessage').textContent=t||''}
+function getName(){return $('welcomeName').value.trim()}
+function makeCode(){return Math.random().toString(36).slice(2,8).toUpperCase()}
 
 function scenarioName(v){
-return({
-classic:'کلاسیک',
-commando:'تکاور',
-negotiation:'مذاکره'
-})[v]||'کلاسیک';
+return({classic:'کلاسیک',commando:'تکاور',negotiation:'مذاکره'})[v]||'کلاسیک';
 }
 
 function showMode(m){
@@ -265,12 +231,10 @@ authMessage('');
 function normalizePhone(v){
 const fa='۰۱۲۳۴۵۶۷۸۹';
 const ar='٠١٢٣٤٥٦٧٨٩';
-
 let p=String(v||'').trim()
 .replace(/[۰-۹]/g,d=>String(fa.indexOf(d)))
 .replace(/[٠-٩]/g,d=>String(ar.indexOf(d)))
 .replace(/[\s()-]/g,'');
-
 if(p.startsWith('00'))p='+'+p.slice(2);
 return p;
 }
@@ -291,7 +255,6 @@ $('welcome').classList.add('hidden');
 $('app').classList.remove('hidden');
 say('اتصال برقرار شد. خوش آمدی.');
 loadPublicRooms();
-
 if(lobbyTimer)clearInterval(lobbyTimer);
 lobbyTimer=setInterval(loadPublicRooms,15000);
 }
@@ -299,66 +262,43 @@ lobbyTimer=setInterval(loadPublicRooms,15000);
 async function startPhoneLogin(){
 let b=$('sendCodeButton');
 let phone=normalizePhone($('phoneNumber').value);
-
 if(!getName())return authMessage('ابتدا نام بازیکن را وارد کن.');
 if(!/^\+[1-9]\d{7,14}$/.test(phone))return authMessage('شماره را همراه کد کشور وارد کن.');
-
 b.disabled=true;
 authMessage('در حال ارسال کد...');
-
 try{
 if(userId){
 try{await account.deleteSession('current')}catch(e){}
 userId=null;
 }
-
-let t=await account.createPhoneToken({
-userId:Appwrite.ID.unique(),
-phone
-});
-
+let t=await account.createPhoneToken({userId:Appwrite.ID.unique(),phone});
 pendingPhoneUserId=t.userId;
 $('otpArea').classList.add('show');
 authMessage('کد ارسال شد.');
-
 }catch(e){
 authMessage('خطا: '+e.message);
-}finally{
-b.disabled=false;
-}
+}finally{b.disabled=false}
 }
 
 async function verifyPhoneCode(){
 let c=$('otpCode').value.trim();
-
 if(!pendingPhoneUserId)return authMessage('ابتدا کد درخواست کن.');
 if(!/^\d{4,8}$/.test(c))return authMessage('کد را درست وارد کن.');
-
 $('verifyCodeButton').disabled=true;
-
 try{
-await account.createSession({
-userId:pendingPhoneUserId,
-secret:c
-});
-
+await account.createSession({userId:pendingPhoneUserId,secret:c});
 let a=await account.get();
 userId=a.$id;
 pendingPhoneUserId=null;
 revealApp();
-
 }catch(e){
 authMessage('کد نامعتبر است: '+e.message);
-}finally{
-$('verifyCodeButton').disabled=false;
-}
+}finally{$('verifyCodeButton').disabled=false}
 }
 
 async function continueAsGuest(){
 if(!getName())return authMessage('نام بازیکن را وارد کن.');
-
 $('guestButton').disabled=true;
-
 try{
 if(!userId){
 await account.createAnonymousSession();
@@ -366,19 +306,14 @@ let a=await account.get();
 userId=a.$id;
 }
 revealApp();
-
 }catch(e){
 authMessage('ورود مهمان ناموفق: '+e.message);
-}finally{
-$('guestButton').disabled=false;
-}
+}finally{$('guestButton').disabled=false}
 }
 
 async function stopSubs(){
 for(let s of [playerSub,messageSub]){
-if(s){
-try{await s()}catch(e){}
-}
+if(s){try{await s()}catch(e){}}
 }
 playerSub=null;
 messageSub=null;
@@ -388,10 +323,8 @@ async function createRoom(){
 try{
 if(!userId)return say('ابتدا وارد شو.');
 if(!getName())return say('نام بازیکن را وارد کن.');
-
 $('createButton').disabled=true;
 say('در حال ساخت اتاق...');
-
 let code=makeCode();
 let max=Number($('maxPlayers').value);
 let scenario=$('scenario').value;
@@ -404,7 +337,7 @@ data:{
 roomcode:code,
 hostId:userId,
 status:'waiting',
-scenario,
+scenario:scenario,
 assistantModeratorId:'',
 winner:'',
 maxplayers:max,
@@ -415,76 +348,51 @@ currentphase:'lobby'
 currentHost=userId;
 currentMaxPlayers=max;
 currentScenario=scenario;
-
 await enterRoom(code,getName());
 loadPublicRooms();
-
 }catch(e){
-say('خطا در ساخت اتاق: '+e.message);
-}finally{
-$('createButton').disabled=false;
-}
+console.error('createRoom error:',e);
+say('خطا در ساخت اتاق: '+(e.message||String(e)));
+}finally{$('createButton').disabled=false}
 }
 
 async function joinRoomByCode(code,button=null){
 try{
 if(!userId)return say('ابتدا وارد بازی شو.');
-
 const playerName=getName();
 code=String(code||'').trim().toUpperCase();
-
 if(!playerName)return say('ابتدا نام بازیکن را وارد کن.');
 if(!code)return say('کد اتاق معتبر نیست.');
-
 if(button)button.disabled=true;
-
 say('در حال بررسی اتاق '+code+' ...');
 
 const result=await db.listRows({
 databaseId:CFG.database,
 tableId:CFG.rooms,
-queries:[
-Appwrite.Query.equal('roomcode',code),
-Appwrite.Query.limit(1)
-]
+queries:[Appwrite.Query.equal('roomcode',code),Appwrite.Query.limit(1)]
 });
-
 const room=result.rows&&result.rows[0];
-
-if(!room){
-say('اتاق پیدا نشد؛ فهرست را بروزرسانی کن.');
-return;
-}
-
+if(!room){say('اتاق پیدا نشد؛ فهرست را بروزرسانی کن.');return}
 if(room.status!=='waiting'||room.currentphase!=='lobby'){
-say('این اتاق در حال بازی است و امکان ورود ندارد.');
-return;
+say('این اتاق در حال بازی است و امکان ورود ندارد.');return;
 }
-
 currentHost=room.hostId;
 currentMaxPlayers=Number(room.maxplayers)||12;
 currentScenario=room.scenario||'classic';
-
 say('اتاق پیدا شد؛ در حال ورود...');
 await enterRoom(code,playerName);
-
 }catch(error){
 say('خطا در ورود از لابی عمومی: '+(error.message||error));
 console.error('joinRoomByCode:',error);
-}finally{
-if(button)button.disabled=false;
-}
+}finally{if(button)button.disabled=false}
 }
 
-async function joinRoom(){
-await joinRoomByCode($('roomCode').value,$('joinButton'));
-}
+async function joinRoom(){await joinRoomByCode($('roomCode').value,$('joinButton'))}
 
 async function enterRoom(code,name){
 try{
 await stopSubs();
 await closeVoice();
-
 currentRoom=code;
 seenMessages.clear();
 
@@ -497,28 +405,21 @@ Appwrite.Query.equal('UserId',userId),
 Appwrite.Query.limit(1)
 ]
 });
-
 let mine=ex.rows[0];
 
 if(mine){
 myPlayerRow=mine.$id;
 ready=!!mine.isReady;
 }else{
-
 let count=await db.listRows({
 databaseId:CFG.database,
 tableId:CFG.players,
-queries:[
-Appwrite.Query.equal('roomcode',code),
-Appwrite.Query.limit(100)
-]
+queries:[Appwrite.Query.equal('roomcode',code),Appwrite.Query.limit(100)]
 });
-
 if(count.rows.length>=currentMaxPlayers){
 currentRoom='';
 return say('ظرفیت اتاق تکمیل است.');
 }
-
 let cr=await db.createRow({
 databaseId:CFG.database,
 tableId:CFG.players,
@@ -535,7 +436,6 @@ hasSpoken:false,
 isModerator:false
 }
 });
-
 myPlayerRow=cr.$id;
 ready=false;
 }
@@ -543,21 +443,17 @@ ready=false;
 $('entry').classList.add('hidden');
 $('publicLobby').classList.add('hidden');
 $('game').classList.remove('hidden');
-
 $('roomLabel').textContent=code;
 $('capacityLabel').textContent='ظرفیت: '+currentMaxPlayers+' بازیکن';
 $('scenarioLabel').textContent='سناریو: '+scenarioName(currentScenario);
 $('hostLabel').textContent=currentHost===userId?'شما میزبان اتاق هستید.':'بازیکن اتاق';
-
 updateReadyButton();
 await refreshPlayers();
 await loadChat();
 
 playerSub=realtime.subscribe(
 Appwrite.Channel.tablesdb(CFG.database).table(CFG.players).row(),
-e=>{
-if(e.payload?.roomcode===currentRoom)refreshPlayers();
-}
+e=>{if(e.payload?.roomcode===currentRoom)refreshPlayers()}
 );
 
 messageSub=realtime.subscribe(
@@ -565,7 +461,6 @@ Appwrite.Channel.tablesdb(CFG.database).table(CFG.messages).row(),
 e=>{
 let m=e.payload;
 if(m?.roomcode!==currentRoom)return;
-
 if(m.messageType==='chat')appendChat(m);
 else if(m.messageType==='rtc')handleSignal(m).catch(err=>console.warn(err));
 else if(m.messageType==='voice-state')updateVoiceState(m);
@@ -573,25 +468,20 @@ else if(m.messageType==='voice-state')updateVoiceState(m);
 );
 
 await syncPeers();
-
 say('وارد لابی شدی. می‌توانی چت کنی یا دکمه صوتی را نگه داری.');
-
 }catch(e){
+console.error('enterRoom error:',e);
 say('خطا در ورود به لابی: '+e.message);
 }
 }
 
 async function loadPublicRooms(){
 if(!userId||loadingRooms)return;
-
 loadingRooms=true;
-
 const box=$('publicRooms');
 const refreshButton=$('refreshRoomsButton');
-
 refreshButton.disabled=true;
 box.textContent='در حال دریافت اتاق‌ها...';
-
 try{
 const result=await db.listRows({
 databaseId:CFG.database,
@@ -602,69 +492,50 @@ Appwrite.Query.equal('currentphase','lobby'),
 Appwrite.Query.limit(50)
 ]
 });
-
 box.innerHTML='';
 let visibleCount=0;
-
 for(const room of (result.rows||[])){
 if(!room.roomcode)continue;
-
 let playersResult;
-
 try{
 playersResult=await db.listRows({
 databaseId:CFG.database,
 tableId:CFG.players,
-queries:[
-Appwrite.Query.equal('roomcode',room.roomcode),
-Appwrite.Query.limit(100)
-]
+queries:[Appwrite.Query.equal('roomcode',room.roomcode),Appwrite.Query.limit(100)]
 });
 }catch(playerError){
 console.warn('دریافت بازیکنان اتاق ناموفق بود:',room.roomcode,playerError);
 continue;
 }
-
 const players=playersResult.rows||[];
-
 const createdAt=room.$createdAt?Date.parse(room.$createdAt):0;
 const olderThan24Hours=createdAt>0&&(Date.now()-createdAt)>24*60*60*1000;
-
 if(players.length===0||olderThan24Hours)continue;
-
 const max=Number(room.maxplayers)||12;
 const full=players.length>=max;
 const host=players.find(p=>p.UserId===room.hostId);
-
 const card=document.createElement('div');
 card.className='room-card';
-
 const title=document.createElement('h4');
 title.textContent='🎮 اتاق '+room.roomcode;
-
 const info=document.createElement('div');
 info.className='room-info';
 info.textContent='👑 میزبان: '+(host?.PlayerName||'میزبان')+' | 👥 بازیکنان: '+players.length+'/'+max+' | 🎭 سناریو: '+scenarioName(room.scenario);
-
 const joinButton=document.createElement('button');
 joinButton.className='wide';
 joinButton.textContent=full?'ظرفیت اتاق تکمیل است':'ورود به اتاق';
 joinButton.disabled=full;
-
 joinButton.addEventListener('click',async()=>{
 if(full)return;
 await joinRoomByCode(room.roomcode,joinButton);
 });
-
 card.append(title,info,joinButton);
 box.appendChild(card);
 visibleCount++;
 }
-
 if(visibleCount===0){
 box.textContent='فعلاً اتاق عمومی فعالی وجود ندارد. اتاق‌های خالی و قدیمی نمایش داده نمی‌شوند.';
 }
-
 }catch(error){
 box.textContent='خطا در دریافت اتاق‌ها: '+(error.message||error);
 console.error('loadPublicRooms:',error);
@@ -680,89 +551,65 @@ $('readyButton').textContent=ready?'لغو آمادگی':'آماده‌ام';
 
 async function refreshPlayers(){
 if(!currentRoom)return;
-
 try{
 let r=await db.listRows({
 databaseId:CFG.database,
 tableId:CFG.players,
-queries:[
-Appwrite.Query.equal('roomcode',currentRoom),
-Appwrite.Query.limit(100)
-]
+queries:[Appwrite.Query.equal('roomcode',currentRoom),Appwrite.Query.limit(100)]
 });
-
 let ul=$('players');
 ul.innerHTML='';
-
 for(let p of r.rows){
 let li=document.createElement('li');
 let line=document.createElement('div');
 line.className='player-line';
-
 let n=document.createElement('span');
 n.textContent=p.PlayerName+(p.UserId===currentHost?' 👑':'')+(p.isReady?' ✓':'');
-
 let s=document.createElement('span');
 s.className='mic-state';
 s.id='voice-'+p.UserId;
 s.textContent='';
-
 line.append(n,s);
 li.append(line);
 ul.append(li);
 }
-
 if(!r.rows.length)ul.textContent='هنوز بازیکنی نیست.';
-
 await syncPeers();
-
-}catch(e){
-say('خطا در دریافت بازیکنان: '+e.message);
-}
+}catch(e){say('خطا در دریافت بازیکنان: '+e.message)}
 }
 
 async function setReady(){
 try{
 if(!myPlayerRow)return;
-
 let v=!ready;
-
 await db.updateRow({
 databaseId:CFG.database,
 tableId:CFG.players,
 rowId:myPlayerRow,
 data:{isReady:v}
 });
-
 ready=v;
 updateReadyButton();
 await refreshPlayers();
-
-}catch(e){
-say('خطا: '+e.message);
-}
+}catch(e){say('خطا: '+e.message)}
 }
 
 async function leaveRoom(){
 await stopSubs();
 await closeVoice();
-
 currentRoom='';
 currentHost='';
 myPlayerRow='';
 ready=false;
-
 $('game').classList.add('hidden');
 $('entry').classList.remove('hidden');
 $('publicLobby').classList.remove('hidden');
 $('players').innerHTML='';
 $('chatBox').innerHTML='';
-
 say('از اتاق خارج شدی.');
 loadPublicRooms();
 }
 
-// پیام‌های چت و سیگنال صوتی
 async function createMessage(data){
 return db.createRow({
 databaseId:CFG.database,
@@ -784,23 +631,13 @@ isRead:false
 async function sendChat(){
 let text=$('chatInput').value.trim();
 if(!text||!currentRoom)return;
-
 $('sendChatButton').disabled=true;
-
 try{
-await createMessage({
-messageType:'chat',
-content:text
-});
-
+await createMessage({messageType:'chat',content:text});
 $('chatInput').value='';
 await loadChat();
-
-}catch(e){
-say('ارسال پیام ناموفق بود: '+e.message);
-}finally{
-$('sendChatButton').disabled=false;
-}
+}catch(e){say('ارسال پیام ناموفق بود: '+e.message)}
+finally{$('sendChatButton').disabled=false}
 }
 
 $('chatInput').addEventListener('keydown',e=>{
@@ -809,20 +646,15 @@ if(e.key==='Enter')sendChat();
 
 function appendChat(m){
 let id=m.$id||[m.userId,m.content,m.$createdAt].join('|');
-
 if(seenMessages.has(id))return;
 seenMessages.add(id);
-
 let box=$('chatBox');
 let item=document.createElement('div');
 item.className='chat-message';
-
 let b=document.createElement('b');
 b.textContent=(m.PlayerName||'بازیکن')+' : ';
-
 let span=document.createElement('span');
 span.textContent=m.content||'';
-
 item.append(b,span);
 box.append(item);
 box.scrollTop=box.scrollHeight;
@@ -830,9 +662,7 @@ box.scrollTop=box.scrollHeight;
 
 async function loadChat(){
 if(!currentRoom||chatRefreshBusy)return;
-
 chatRefreshBusy=true;
-
 try{
 let r=await db.listRows({
 databaseId:CFG.database,
@@ -844,61 +674,39 @@ Appwrite.Query.equal('messageType','chat'),
 Appwrite.Query.limit(100)
 ]
 });
-
 $('chatBox').innerHTML='';
 seenMessages.clear();
-
 for(let m of r.rows)appendChat(m);
-
 }catch(e){
 $('chatBox').textContent='دریافت پیام‌ها ناموفق بود: '+e.message;
-}finally{
-chatRefreshBusy=false;
-}
+}finally{chatRefreshBusy=false}
 }
 
 // ارتباط صوتی WebRTC
 async function signal(to,type,obj){
 if(!currentRoom||!to)return;
-
 await createMessage({
 messageType:'rtc',
 targetUserId:to,
-content:JSON.stringify({
-from:userId,
-type,
-data:obj
-})
+content:JSON.stringify({from:userId,type,data:obj})
 });
 }
 
 function makePeer(peerId){
 let old=peers.get(peerId);
 if(old)return old;
-
 let pc=new RTCPeerConnection(rtcConfig);
 let trans=pc.addTransceiver('audio',{direction:'sendrecv'});
-
-let state={
-pc,
-trans,
-ice:[],
-makingOffer:false
-};
-
+let state={pc,trans,ice:[],makingOffer:false};
 peers.set(peerId,state);
-
 if(localStream){
 trans.sender.replaceTrack(localStream.getAudioTracks()[0]).catch(console.warn);
 }
-
 pc.onicecandidate=e=>{
 if(e.candidate)signal(peerId,'ice',e.candidate.toJSON()).catch(console.warn);
 };
-
 pc.ontrack=e=>{
 let audio=$('audio-'+peerId);
-
 if(!audio){
 audio=document.createElement('audio');
 audio.id='audio-'+peerId;
@@ -906,134 +714,79 @@ audio.autoplay=true;
 audio.playsInline=true;
 $('audioPeers').append(audio);
 }
-
 audio.srcObject=e.streams[0]||new MediaStream([e.track]);
 audio.play().catch(()=>{});
 };
-
 pc.onconnectionstatechange=()=>{
 let el=$('voice-'+peerId);
 if(el)el.textContent=pc.connectionState==='connected'?'● صوت متصل':'';
 };
-
 pc.onnegotiationneeded=()=>{};
-
 return state;
 }
 
 async function syncPeers(){
 if(!currentRoom)return;
-
 try{
 let r=await db.listRows({
 databaseId:CFG.database,
 tableId:CFG.players,
-queries:[
-Appwrite.Query.equal('roomcode',currentRoom),
-Appwrite.Query.limit(100)
-]
+queries:[Appwrite.Query.equal('roomcode',currentRoom),Appwrite.Query.limit(100)]
 });
-
 for(let p of r.rows){
 if(!p.UserId||p.UserId===userId)continue;
-
 let st=makePeer(p.UserId);
-
 if(userId.localeCompare(p.UserId)<0&&!st.offered){
 st.offered=true;
-
 try{
 let offer=await st.pc.createOffer();
 await st.pc.setLocalDescription(offer);
 await signal(p.UserId,'offer',st.pc.localDescription.toJSON());
-}catch(e){
-console.warn('offer',e);
+}catch(e){console.warn('offer',e)}
 }
 }
-}
-
-}catch(e){
-console.warn(e);
-}
+}catch(e){console.warn(e)}
 }
 
 async function handleSignal(m){
 if(m.targetUserId!==userId)return;
-
 let payload;
-
-try{
-payload=JSON.parse(m.content);
-}catch(e){
-return;
-}
-
+try{payload=JSON.parse(m.content)}catch(e){return}
 if(!payload?.from||payload.from===userId)return;
-
 let st=makePeer(payload.from);
 let pc=st.pc;
-
 try{
 if(payload.type==='offer'){
 await pc.setRemoteDescription(new RTCSessionDescription(payload.data));
-
 let answer=await pc.createAnswer();
 await pc.setLocalDescription(answer);
-
 await signal(payload.from,'answer',pc.localDescription.toJSON());
-
-for(let c of st.ice.splice(0)){
-await pc.addIceCandidate(c);
-}
-
+for(let c of st.ice.splice(0))await pc.addIceCandidate(c);
 }else if(payload.type==='answer'){
-
 if(pc.signalingState==='have-local-offer'){
 await pc.setRemoteDescription(new RTCSessionDescription(payload.data));
-
-for(let c of st.ice.splice(0)){
-await pc.addIceCandidate(c);
+for(let c of st.ice.splice(0))await pc.addIceCandidate(c);
 }
-}
-
 }else if(payload.type==='ice'){
-
 let c=new RTCIceCandidate(payload.data);
-
-if(pc.remoteDescription){
-await pc.addIceCandidate(c);
-}else{
-st.ice.push(c);
+if(pc.remoteDescription)await pc.addIceCandidate(c);
+else st.ice.push(c);
 }
-}
-
-}catch(e){
-console.warn('signal error',e);
-}
+}catch(e){console.warn('signal error',e)}
 }
 
 function updateVoiceState(m){
 if(m.targetUserId!==''&&m.targetUserId!==userId)return;
-
 let el=$('voice-'+m.userId);
-
-if(el){
-el.textContent=m.content==='on'?'🎙 در حال صحبت':'● آماده صوتی';
-}
+if(el)el.textContent=m.content==='on'?'🎙 در حال صحبت':'● آماده صوتی';
 }
 
 async function ensureMicrophone(){
 if(localStream)return;
-
 localStream=await navigator.mediaDevices.getUserMedia({
-audio:{
-echoCancellation:true,
-noiseSuppression:true,
-autoGainControl:true
-},
+audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
 video:false
 });
-
 for(let st of peers.values()){
 let track=localStream.getAudioTracks()[0];
 await st.trans.sender.replaceTrack(track);
@@ -1043,39 +796,26 @@ track.enabled=false;
 
 async function pttDown(e){
 e.preventDefault();
-
 if(pttActive||!currentRoom)return;
-
 try{
 if(!navigator.mediaDevices?.getUserMedia){
 throw new Error('مرورگر یا محیط فعلی از میکروفون پشتیبانی نمی‌کند؛ بازی را با HTTPS باز کن.');
 }
-
 await ensureMicrophone();
-
 pttActive=true;
 localStream.getAudioTracks().forEach(t=>t.enabled=true);
-
 $('micButton').classList.add('active');
 $('micButton').textContent='در حال صحبت… (برای قطع رها کن)';
 $('voiceStatus').textContent='میکروفون روشن است؛ دکمه را رها کن تا قطع شود.';
-
-await createMessage({
-messageType:'voice-state',
-content:'on'
-});
-
+await createMessage({messageType:'voice-state',content:'on'});
 for(let [id,st] of peers){
 if(!st.offered&&userId.localeCompare(id)<0){
 st.offered=true;
-
 let offer=await st.pc.createOffer();
 await st.pc.setLocalDescription(offer);
-
 await signal(id,'offer',st.pc.localDescription.toJSON());
 }
 }
-
 }catch(e){
 pttActive=false;
 $('voiceStatus').textContent='دسترسی میکروفون ناموفق: '+e.message;
@@ -1085,37 +825,23 @@ $('voiceStatus').textContent='دسترسی میکروفون ناموفق: '+e.me
 async function pttUp(e){
 if(e)e.preventDefault();
 if(!pttActive)return;
-
 pttActive=false;
-
-if(localStream){
-localStream.getAudioTracks().forEach(t=>t.enabled=false);
-}
-
+if(localStream)localStream.getAudioTracks().forEach(t=>t.enabled=false);
 $('micButton').classList.remove('active');
 $('micButton').textContent='برای صحبت نگه دار';
 $('voiceStatus').textContent='میکروفون خاموش است.';
-
-try{
-await createMessage({
-messageType:'voice-state',
-content:'off'
-});
-}catch(e){}
+try{await createMessage({messageType:'voice-state',content:'off'})}catch(e){}
 }
 
 async function closeVoice(){
 pttActive=false;
-
 if(localStream){
 localStream.getTracks().forEach(t=>t.stop());
 localStream=null;
 }
-
 for(let st of peers.values()){
 try{st.pc.close()}catch(e){}
 }
-
 peers.clear();
 $('audioPeers').innerHTML='';
 $('micButton').classList.remove('active');
