@@ -46,7 +46,7 @@ button:disabled{opacity:.5}
 .profile-title{color:var(--g);font-size:18px;margin:10px 0}
 hr{border:0;border-top:1px solid #ffffff20;margin:18px 0}
 
-/* Luxury lobby */
+/* Luxury Lobby */
 .lux-title{text-align:center;font-size:23px;font-weight:900;color:#f2d58f;text-shadow:0 2px 18px #b98236;letter-spacing:.3px;margin:4px 0 18px}
 .lux-summary{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
 .lux-pill{background:linear-gradient(135deg,#302719,#17151a);border:1px solid #9b773e;border-radius:30px;padding:9px 13px;color:#f2d58f;font-size:12px;text-align:center}
@@ -607,7 +607,7 @@ async function sendSignal(type,obj,target=""){
 function handleMessage(m){
   if(m.userId===userId)return;
   if(m.messageType==="text"){appendChat(m.PlayerName,m.content);return}
-  if(!m.messageType.startsWith("rtc-")&&!["peer-hello","voice-state"].includes(m.messageType))return;
+  if(!m.messageType.startsWith("rtc-")&& !["peer-hello","voice-state"].includes(m.messageType))return;
   let data;
   try{data=JSON.parse(m.content)}catch(e){return}
   if(m.targetUserId&&m.targetUserId!==userId)return;
