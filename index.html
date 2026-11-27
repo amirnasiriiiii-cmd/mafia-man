@@ -292,8 +292,10 @@ hr{border:0;border-top:1px solid #51432d;margin:18px 0}
   <div class="section-heading"><span>🎙 گفت‌وگوی صوتی VIP</span><small>VOICE</small></div>
   <div class="voice-panel">
    <button id="micButton" class="mic"
-    onpointerdown="pttDown(event)" onpointerup="pttUp(event)"
-    onpointercancel="pttUp(event)" onpointerleave="pttUp(event)">
+    onpointerdown="pttDown(event)"
+    onpointerup="pttUp(event)"
+    onpointercancel="pttUp(event)"
+    onpointerleave="pttUp(event)">
     برای صحبت نگه دار
    </button>
    <p id="voiceStatus" class="small">میکروفون خاموش است. برای صحبت دکمه را نگه دار.</p>
@@ -318,17 +320,34 @@ const CFG={
  messages:'6b07b4dd003d807c28e1'
 };
 
-const client=new Appwrite.Client().setEndpoint(CFG.endpoint).setProject(CFG.project);
+const client=new Appwrite.Client()
+ .setEndpoint(CFG.endpoint)
+ .setProject(CFG.project);
+
 const account=new Appwrite.Account(client);
 const db=new Appwrite.TablesDB(client);
-const realtime=new Appwrite.Realtime(client);
 
-let userId=null,pendingPhoneUserId=null,currentRoom='',currentHost='';
-let myPlayerRow='',currentMaxPlayers=12,currentScenario='classic';
-let ready=false,playerSub=null,messageSub=null,lobbyTimer=null;
-let loadingRooms=false,cleanupBusy=false;
-let peers=new Map(),localStream=null,pttActive=false;
-let seenMessages=new Set(),chatRefreshBusy=false;
+let userId=null,pendingPhoneUserId=null;
+let currentRoom='',currentHost='',myPlayerRow='';
+let currentMaxPlayers=12,currentScenario='classic';
+let ready=false;
+
+let lobbyTimer=null;
+let playerTimer=null;
+let messageTimer=null;
+let loadingRooms=false;
+let cleanupBusy=false;
+let leavingBusy=false;
+
+let peers=new Map();
+let localStream=null;
+let pttActive=false;
+
+let seenMessages=new Set();
+let seenSignals=new Set();
+let chatRefreshBusy=false;
+let pollingMessages=false;
+let pollingPlayers=false;
 
 const rtcConfig={
  iceServers:[
@@ -338,93 +357,152 @@ const rtcConfig={
 };
 
 const $=id=>document.getElementById(id);
+
 function say(t){$('message').textContent=t}
 function authMessage(t){$('authMessage').textContent=t||''}
 function getName(){return $('welcomeName').value.trim()}
 function makeCode(){return Math.random().toString(36).slice(2,8).toUpperCase()}
+
 function scenarioName(v){
  return ({classic:'کلاسیک',commando:'تکاور',negotiation:'مذاکره'})[v]||'کلاسیک';
 }
 
+/* ورود */
+
 function showMode(m){
- let g=m==='guest';
- $('phoneMode').classList.toggle('hidden',g);
- $('guestMode').classList.toggle('hidden',!g);
- $('phoneTab').classList.toggle('active',!g);
- $('guestTab').classList.toggle('active',g);
+ const guest=m==='guest';
+ $('phoneMode').classList.toggle('hidden',guest);
+ $('guestMode').classList.toggle('hidden',!guest);
+ $('phoneTab').classList.toggle('active',!guest);
+ $('guestTab').classList.toggle('active',guest);
  authMessage('');
 }
 
 function normalizePhone(v){
  const fa='۰۱۲۳۴۵۶۷۸۹',ar='٠١٢٣٤٥٦٧٨٩';
+
  let p=String(v||'').trim()
- .replace(/[۰-۹]/g,d=>String(fa.indexOf(d)))
- .replace(/[٠-٩]/g,d=>String(ar.indexOf(d)))
- .replace(/[\s()-]/g,'');
+  .replace(/[۰-۹]/g,d=>String(fa.indexOf(d)))
+  .replace(/[٠-٩]/g,d=>String(ar.indexOf(d)))
+  .replace(/[\s()-]/g,'');
+
  if(p.startsWith('00'))p='+'+p.slice(2);
  return p;
 }
 
 async function ensureAuth(){
- try{let a=await account.get();userId=a.$id;return a}
- catch(e){userId=null;return null}
+ try{
+  const a=await account.get();
+  userId=a.$id;
+  return a;
+ }catch(e){
+  userId=null;
+  return null;
+ }
 }
 
 function revealApp(){
  $('welcome').classList.add('hidden');
  $('app').classList.remove('hidden');
  say('اتصال برقرار شد. خوش آمدی.');
+
  loadPublicRooms();
+
  if(lobbyTimer)clearInterval(lobbyTimer);
- lobbyTimer=setInterval(loadPublicRooms,15000);
+ lobbyTimer=setInterval(loadPublicRooms,20000);
 }
 
 async function startPhoneLogin(){
- let b=$('sendCodeButton'),phone=normalizePhone($('phoneNumber').value);
+ const b=$('sendCodeButton');
+ const phone=normalizePhone($('phoneNumber').value);
+
  if(!getName())return authMessage('ابتدا نام بازیکن را وارد کن.');
- if(!/^\+[1-9]\d{7,14}$/.test(phone))return authMessage('شماره را همراه کد کشور وارد کن.');
- b.disabled=true;authMessage('در حال ارسال کد...');
+ if(!/^\+[1-9]\d{7,14}$/.test(phone))
+  return authMessage('شماره را همراه کد کشور وارد کن.');
+
+ b.disabled=true;
+ authMessage('در حال ارسال کد...');
+
  try{
-  if(userId){try{await account.deleteSession('current')}catch(e){}userId=null}
-  let t=await account.createPhoneToken({userId:Appwrite.ID.unique(),phone});
+  if(userId){
+   try{await account.deleteSession('current')}catch(e){}
+   userId=null;
+  }
+
+  const t=await account.createPhoneToken({
+   userId:Appwrite.ID.unique(),
+   phone
+  });
+
   pendingPhoneUserId=t.userId;
   $('otpArea').classList.add('show');
   authMessage('کد ارسال شد.');
- }catch(e){authMessage('خطا: '+e.message)}
- finally{b.disabled=false}
+ }catch(e){
+  authMessage('خطا: '+e.message);
+ }finally{
+  b.disabled=false;
+ }
 }
 
 async function verifyPhoneCode(){
- let c=$('otpCode').value.trim();
- if(!pendingPhoneUserId)return authMessage('ابتدا کد درخواست کن.');
- if(!/^\d{4,8}$/.test(c))return authMessage('کد را درست وارد کن.');
+ const c=$('otpCode').value.trim();
+
+ if(!pendingPhoneUserId)
+  return authMessage('ابتدا کد درخواست کن.');
+
+ if(!/^\d{4,8}$/.test(c))
+  return authMessage('کد را درست وارد کن.');
+
  $('verifyCodeButton').disabled=true;
+
  try{
-  await account.createSession({userId:pendingPhoneUserId,secret:c});
-  let a=await account.get();userId=a.$id;pendingPhoneUserId=null;revealApp();
- }catch(e){authMessage('کد نامعتبر است: '+e.message)}
- finally{$('verifyCodeButton').disabled=false}
+  await account.createSession({
+   userId:pendingPhoneUserId,
+   secret:c
+  });
+
+  const a=await account.get();
+  userId=a.$id;
+  pendingPhoneUserId=null;
+  revealApp();
+ }catch(e){
+  authMessage('کد نامعتبر است: '+e.message);
+ }finally{
+  $('verifyCodeButton').disabled=false;
+ }
 }
 
 async function continueAsGuest(){
  if(!getName())return authMessage('نام بازیکن را وارد کن.');
+
  $('guestButton').disabled=true;
+
  try{
   if(!userId){
    await account.createAnonymousSession();
-   let a=await account.get();userId=a.$id;
+   const a=await account.get();
+   userId=a.$id;
   }
   revealApp();
- }catch(e){authMessage('ورود مهمان ناموفق: '+e.message)}
- finally{$('guestButton').disabled=false}
+ }catch(e){
+  authMessage('ورود مهمان ناموفق: '+e.message);
+ }finally{
+  $('guestButton').disabled=false;
+ }
 }
 
-async function stopSubs(){
- for(let s of [playerSub,messageSub])if(s){try{await s()}catch(e){}}
- playerSub=messageSub=null;
+/* توقف دریافت‌های دوره‌ای */
+
+function stopRoomPolling(){
+ if(playerTimer)clearInterval(playerTimer);
+ if(messageTimer)clearInterval(messageTimer);
+
+ playerTimer=null;
+ messageTimer=null;
 }
 
-/* پاک‌سازی اتاق‌های انتظار خالی قدیمی */
+/* پاک‌سازی اتاق‌های خالی قدیمی */
+
 async function cleanupEmptyWaitingRooms(){
  if(cleanupBusy)return;
  cleanupBusy=true;
@@ -443,13 +521,13 @@ async function cleanupEmptyWaitingRooms(){
   for(const room of (result.rows||[])){
    if(!room.$id||!room.roomcode)continue;
 
-   // اتاق تازه ساخته‌شده را حذف نکن؛ ممکن است بازیکن هنوز در حال ورود باشد.
-   const createdAt=room.$createdAt?Date.parse(room.$createdAt):0;
-   if(!createdAt)continue;
-   if(Date.now()-createdAt<120000)continue;
+   const createdAt=room.$createdAt
+    ?Date.parse(room.$createdAt):0;
+
+   if(!createdAt||Date.now()-createdAt<120000)continue;
 
    try{
-    const playersResult=await db.listRows({
+    const p=await db.listRows({
      databaseId:CFG.database,
      tableId:CFG.players,
      queries:[
@@ -458,81 +536,122 @@ async function cleanupEmptyWaitingRooms(){
      ]
     });
 
-    const players=playersResult.rows||[];
-
-    // فقط پس از بررسی موفق و اطمینان از خالی بودن اتاق حذف کن.
-    if(players.length===0){
+    if((p.rows||[]).length===0){
      await db.deleteRow({
       databaseId:CFG.database,
       tableId:CFG.rooms,
       rowId:room.$id
      });
     }
-   }catch(checkError){
-    console.warn('پاک‌سازی این اتاق انجام نشد:',room.roomcode,checkError);
+   }catch(e){
+    console.warn('بررسی اتاق انجام نشد:',room.roomcode,e);
    }
   }
  }catch(e){
-  console.warn('پاک‌سازی اتاق‌های قدیمی ناموفق بود:',e);
+  console.warn('پاک‌سازی اتاق‌ها:',e);
  }finally{
   cleanupBusy=false;
  }
 }
 
+/* ساخت اتاق */
+
 async function createRoom(){
  try{
   if(!userId)return say('ابتدا وارد شو.');
   if(!getName())return say('نام بازیکن را وارد کن.');
-  $('createButton').disabled=true;say('در حال ساخت اتاق VIP...');
 
-  let code=makeCode(),max=Number($('maxPlayers').value),scenario=$('scenario').value;
+  $('createButton').disabled=true;
+  say('در حال ساخت اتاق VIP...');
+
+  const code=makeCode();
+  const max=Number($('maxPlayers').value);
+  const scenario=$('scenario').value;
 
   await db.createRow({
-   databaseId:CFG.database,tableId:CFG.rooms,rowId:Appwrite.ID.unique(),
+   databaseId:CFG.database,
+   tableId:CFG.rooms,
+   rowId:Appwrite.ID.unique(),
    data:{
-    roomcode:code,hostId:userId,status:'waiting',scenario,
-    assistantModeratorId:'',winner:'',maxplayers:max,currentphase:'lobby'
+    roomcode:code,
+    hostId:userId,
+    status:'waiting',
+    scenario,
+    assistantModeratorId:'',
+    winner:'',
+    maxplayers:max,
+    currentphase:'lobby'
    }
   });
 
-  currentHost=userId;currentMaxPlayers=max;currentScenario=scenario;
+  currentHost=userId;
+  currentMaxPlayers=max;
+  currentScenario=scenario;
+
   await enterRoom(code,getName());
   loadPublicRooms();
- }catch(e){say('خطا در ساخت اتاق: '+e.message)}
- finally{$('createButton').disabled=false}
+
+ }catch(e){
+  say('خطا در ساخت اتاق: '+e.message);
+ }finally{
+  $('createButton').disabled=false;
+ }
 }
+
+/* ورود به اتاق */
 
 async function joinRoom(){
  try{
   if(!userId)return say('ابتدا وارد شو.');
-  let code=$('roomCode').value.trim().toUpperCase();
-  if(!getName()||!code)return say('نام و کد اتاق را وارد کن.');
+
+  const code=$('roomCode').value.trim().toUpperCase();
+
+  if(!getName()||!code)
+   return say('نام و کد اتاق را وارد کن.');
+
   $('joinButton').disabled=true;
 
-  let r=await db.listRows({
-   databaseId:CFG.database,tableId:CFG.rooms,
-   queries:[Appwrite.Query.equal('roomcode',code),Appwrite.Query.limit(1)]
+  const r=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.rooms,
+   queries:[
+    Appwrite.Query.equal('roomcode',code),
+    Appwrite.Query.limit(1)
+   ]
   });
 
-  let room=r.rows[0];
+  const room=r.rows?.[0];
+
   if(!room)return say('اتاق پیدا نشد.');
-  if(room.status!=='waiting'||room.currentphase!=='lobby')return say('این اتاق در حال بازی است.');
+
+  if(room.status!=='waiting'||room.currentphase!=='lobby')
+   return say('این اتاق در حال بازی است.');
 
   currentHost=room.hostId;
   currentMaxPlayers=Number(room.maxplayers)||12;
   currentScenario=room.scenario||'classic';
+
   await enterRoom(code,getName());
- }catch(e){say('خطا در ورود: '+e.message)}
- finally{$('joinButton').disabled=false}
+
+ }catch(e){
+  say('خطا در ورود: '+e.message);
+ }finally{
+  $('joinButton').disabled=false;
+ }
 }
 
 async function enterRoom(code,name){
  try{
-  await stopSubs();await closeVoice();
-  currentRoom=code;seenMessages.clear();
+  stopRoomPolling();
+  await closeVoice();
 
-  let ex=await db.listRows({
-   databaseId:CFG.database,tableId:CFG.players,
+  currentRoom=code;
+  seenMessages.clear();
+  seenSignals.clear();
+
+  const ex=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.players,
    queries:[
     Appwrite.Query.equal('roomcode',code),
     Appwrite.Query.equal('UserId',userId),
@@ -540,75 +659,87 @@ async function enterRoom(code,name){
    ]
   });
 
-  let mine=ex.rows[0];
+  const mine=ex.rows?.[0];
 
   if(mine){
-   myPlayerRow=mine.$id;ready=!!mine.isReady;
+   myPlayerRow=mine.$id;
+   ready=!!mine.isReady;
   }else{
-   let count=await db.listRows({
-    databaseId:CFG.database,tableId:CFG.players,
-    queries:[Appwrite.Query.equal('roomcode',code),Appwrite.Query.limit(100)]
+   const count=await db.listRows({
+    databaseId:CFG.database,
+    tableId:CFG.players,
+    queries:[
+     Appwrite.Query.equal('roomcode',code),
+     Appwrite.Query.limit(100)
+    ]
    });
 
    if(count.rows.length>=currentMaxPlayers){
-    currentRoom='';return say('ظرفیت اتاق تکمیل است.');
+    currentRoom='';
+    return say('ظرفیت اتاق تکمیل است.');
    }
 
-   let cr=await db.createRow({
-    databaseId:CFG.database,tableId:CFG.players,rowId:Appwrite.ID.unique(),
+   const cr=await db.createRow({
+    databaseId:CFG.database,
+    tableId:CFG.players,
+    rowId:Appwrite.ID.unique(),
     data:{
-     roomcode:code,PlayerName:name,UserId:userId,
-     isReady:false,isAlive:true,isSilenced:false,
-     canVote:true,hasSpoken:false,isModerator:false
+     roomcode:code,
+     PlayerName:name,
+     UserId:userId,
+     isReady:false,
+     isAlive:true,
+     isSilenced:false,
+     canVote:true,
+     hasSpoken:false,
+     isModerator:false
     }
    });
 
-   myPlayerRow=cr.$id;ready=false;
+   myPlayerRow=cr.$id;
+   ready=false;
   }
 
   $('entry').classList.add('hidden');
   $('publicLobby').classList.add('hidden');
   $('game').classList.remove('hidden');
+
   $('roomLabel').textContent=code;
   $('capacityCount').textContent=currentMaxPlayers;
   $('scenarioLabel').textContent='سناریو: '+scenarioName(currentScenario);
+
   updateReadyButton();
 
   await refreshPlayers();
   await loadChat();
 
-  playerSub=realtime.subscribe(
-   Appwrite.Channel.tablesdb(CFG.database).table(CFG.players).row(),
-   e=>{if(e.payload?.roomcode===currentRoom)refreshPlayers()}
-  );
+  messageTimer=setInterval(pollRoomMessages,1500);
+  playerTimer=setInterval(pollRoomPlayers,3500);
 
-  messageSub=realtime.subscribe(
-   Appwrite.Channel.tablesdb(CFG.database).table(CFG.messages).row(),
-   e=>{
-    let m=e.payload;
-    if(m?.roomcode!==currentRoom)return;
-    if(m.messageType==='chat')appendChat(m);
-    else if(m.messageType==='rtc')handleSignal(m).catch(err=>console.warn(err));
-    else if(m.messageType==='voice-state')updateVoiceState(m);
-   }
-  );
-
+  await pollRoomMessages();
   await syncPeers();
+
   say('وارد لابی VIP شدی. خوش آمدی.');
- }catch(e){say('خطا در ورود به لابی: '+e.message)}
+
+ }catch(e){
+  say('خطا در ورود به لابی: '+e.message);
+ }
 }
+
+/* لابی عمومی */
 
 async function loadPublicRooms(){
  if(!userId||loadingRooms)return;
+
  loadingRooms=true;
  $('refreshRoomsButton').disabled=true;
 
  try{
-  // ابتدا اتاق‌های قدیمی و خالی پاک‌سازی می‌شوند.
   await cleanupEmptyWaitingRooms();
 
-  let r=await db.listRows({
-   databaseId:CFG.database,tableId:CFG.rooms,
+  const r=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.rooms,
    queries:[
     Appwrite.Query.equal('status','waiting'),
     Appwrite.Query.equal('currentphase','lobby'),
@@ -616,49 +747,52 @@ async function loadPublicRooms(){
    ]
   });
 
-  let box=$('publicRooms');
+  const box=$('publicRooms');
   box.innerHTML='';
+
   let visibleCount=0;
 
-  for(let room of (r.rows||[])){
+  for(const room of (r.rows||[])){
    let ps=[];
 
    try{
-    let q=await db.listRows({
-     databaseId:CFG.database,tableId:CFG.players,
+    const q=await db.listRows({
+     databaseId:CFG.database,
+     tableId:CFG.players,
      queries:[
       Appwrite.Query.equal('roomcode',room.roomcode),
       Appwrite.Query.limit(100)
      ]
     });
+
     ps=q.rows||[];
    }catch(e){
-    // اگر بررسی بازیکنان خطا داشت، این اتاق را حذف یا نمایش نده.
     continue;
    }
 
-   // اتاق خالی نمایش داده نمی‌شود.
    if(ps.length===0)continue;
 
-   let max=Number(room.maxplayers)||12;
-   let full=ps.length>=max;
-   let host=ps.find(p=>p.UserId===room.hostId);
+   const max=Number(room.maxplayers)||12;
+   const full=ps.length>=max;
+   const host=ps.find(p=>p.UserId===room.hostId);
 
-   let card=document.createElement('div');
+   const card=document.createElement('div');
    card.className='room-card';
 
-   let h=document.createElement('h4');
+   const h=document.createElement('h4');
    h.textContent='👑 اتاق VIP '+room.roomcode;
 
-   let info=document.createElement('div');
+   const info=document.createElement('div');
    info.className='room-info';
    info.textContent='میزبان: '+(host?.PlayerName||'میزبان')+
-    ' | بازیکنان: '+ps.length+'/'+max+' | '+scenarioName(room.scenario);
+    ' | بازیکنان: '+ps.length+'/'+max+
+    ' | '+scenarioName(room.scenario);
 
-   let b=document.createElement('button');
+   const b=document.createElement('button');
    b.className='wide';
    b.textContent=full?'ظرفیت تکمیل است':'ورود به اتاق';
    b.disabled=full;
+
    b.onclick=()=>{
     $('roomCode').value=room.roomcode;
     joinRoom();
@@ -681,32 +815,34 @@ async function loadPublicRooms(){
  }
 }
 
+/* بازیکنان */
+
 function updateReadyButton(){
  $('readyButton').textContent=ready?'لغو آمادگی':'آماده‌ام';
 }
 
 function makePlayerSlot(p){
- let slot=document.createElement('div');
+ const slot=document.createElement('div');
  slot.className='player-slot';
 
- let avatar=document.createElement('div');
+ const avatar=document.createElement('div');
  avatar.className='player-avatar';
  avatar.textContent='♟';
 
- let details=document.createElement('div');
+ const details=document.createElement('div');
  details.className='player-details';
 
- let name=document.createElement('div');
+ const name=document.createElement('div');
  name.className='player-name';
  name.textContent=p.PlayerName||'بازیکن';
 
- let status=document.createElement('div');
+ const status=document.createElement('div');
  status.className='player-status'+(p.isReady?' ready':'');
  status.textContent=p.isReady?'✓ آماده است':'در انتظار';
 
  details.append(name,status);
 
- let voice=document.createElement('div');
+ const voice=document.createElement('div');
  voice.className='mic-state';
  voice.id='voice-'+p.UserId;
 
@@ -718,72 +854,105 @@ async function refreshPlayers(){
  if(!currentRoom)return;
 
  try{
-  let r=await db.listRows({
-   databaseId:CFG.database,tableId:CFG.players,
+  const r=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.players,
    queries:[
     Appwrite.Query.equal('roomcode',currentRoom),
     Appwrite.Query.limit(100)
    ]
   });
 
-  let all=r.rows||[];
-  let host=all.find(p=>p.UserId===currentHost);
-  let others=all.filter(p=>p.UserId!==currentHost);
+  const all=r.rows||[];
+  const host=all.find(p=>p.UserId===currentHost);
+  const others=all.filter(p=>p.UserId!==currentHost);
 
   $('hostName').textContent=host?.PlayerName||'میزبان اتاق';
   $('playerCount').textContent=all.length;
   $('readyCount').textContent=all.filter(p=>p.isReady).length;
   $('capacityCount').textContent=currentMaxPlayers;
-  $('playersHeadingCount').textContent=others.length+' / '+Math.max(0,currentMaxPlayers-1);
+  $('playersHeadingCount').textContent=
+   others.length+' / '+Math.max(0,currentMaxPlayers-1);
 
-  let grid=$('playerGrid');
+  const grid=$('playerGrid');
   grid.innerHTML='';
 
-  for(let p of others)grid.append(makePlayerSlot(p));
+  for(const p of others)grid.append(makePlayerSlot(p));
 
-  let free=Math.max(0,currentMaxPlayers-1-others.length);
+  const free=Math.max(0,currentMaxPlayers-1-others.length);
+
   for(let i=0;i<free;i++){
-   let empty=document.createElement('div');
+   const empty=document.createElement('div');
    empty.className='empty-slot';
    empty.textContent='＋ جایگاه خالی';
    grid.append(empty);
   }
 
-  await syncPeers();
+  updateReadyButton();
+
  }catch(e){
   say('خطا در دریافت بازیکنان: '+e.message);
+ }
+}
+
+async function pollRoomPlayers(){
+ if(!currentRoom||pollingPlayers)return;
+
+ pollingPlayers=true;
+
+ try{
+  await refreshPlayers();
+  await syncPeers();
+ }catch(e){
+  console.warn('به‌روزرسانی بازیکنان:',e);
+ }finally{
+  pollingPlayers=false;
  }
 }
 
 async function setReady(){
  try{
   if(!myPlayerRow)return;
-  let v=!ready;
+
+  const v=!ready;
 
   await db.updateRow({
-   databaseId:CFG.database,tableId:CFG.players,
-   rowId:myPlayerRow,data:{isReady:v}
+   databaseId:CFG.database,
+   tableId:CFG.players,
+   rowId:myPlayerRow,
+   data:{isReady:v}
   });
 
   ready=v;
   updateReadyButton();
   await refreshPlayers();
- }catch(e){say('خطا: '+e.message)}
+
+ }catch(e){
+  say('خطا در تغییر وضعیت آمادگی: '+e.message);
+ }
 }
 
-/* خروج ایمن از اتاق و حذف اتاق خالی */
+/* خروج بازیکن و گرداننده */
+
 async function leaveRoom(){
+ if(leavingBusy||!currentRoom)return;
+
+ leavingBusy=true;
+
  const leavingRoom=currentRoom;
  const leavingPlayerRow=myPlayerRow;
  const wasHost=currentHost===userId;
 
- if(!leavingRoom)return;
+ const exitButton=document.querySelector(
+  '#game .action-row button.secondary'
+ );
+
+ if(exitButton)exitButton.disabled=true;
 
  try{
-  await stopSubs();
+  stopRoomPolling();
   await closeVoice();
 
-  // اول بازیکن خارج‌شده را از جدول بازیکنان حذف کن.
   if(leavingPlayerRow){
    await db.deleteRow({
     databaseId:CFG.database,
@@ -792,7 +961,6 @@ async function leaveRoom(){
    });
   }
 
-  // وضعیت واقعی بازیکنان باقی‌مانده را از دیتابیس بخوان.
   const remainingResult=await db.listRows({
    databaseId:CFG.database,
    tableId:CFG.players,
@@ -804,7 +972,6 @@ async function leaveRoom(){
 
   const remaining=remainingResult.rows||[];
 
-  // رکورد اتاق را پیدا کن.
   const roomResult=await db.listRows({
    databaseId:CFG.database,
    tableId:CFG.rooms,
@@ -818,8 +985,6 @@ async function leaveRoom(){
 
   if(room){
    if(remaining.length===0){
-    // اتاق خالیِ در حال انتظار حذف می‌شود.
-    // اتاقی که بازی آن شروع شده حذف نخواهد شد.
     if(room.status==='waiting'&&room.currentphase==='lobby'){
      await db.deleteRow({
       databaseId:CFG.database,
@@ -828,7 +993,6 @@ async function leaveRoom(){
      });
     }
    }else if(wasHost){
-    // اگر میزبان خارج شد، میزبانی به بازیکن باقی‌مانده می‌رسد.
     const nextHost=remaining.find(p=>p.UserId);
 
     if(nextHost){
@@ -850,61 +1014,90 @@ async function leaveRoom(){
   $('game').classList.add('hidden');
   $('entry').classList.remove('hidden');
   $('publicLobby').classList.remove('hidden');
+
   $('playerGrid').innerHTML='';
   $('chatBox').innerHTML='';
   $('audioPeers').innerHTML='';
 
-  say('از اتاق خارج شدی.');
+  say('با موفقیت از اتاق خارج شدی.');
   await loadPublicRooms();
 
  }catch(e){
-  say('خطا در خروج یا پاک‌سازی اتاق: '+e.message);
+  say('خطا در خروج: '+e.message+
+   ' | مجوز حذف یا ویرایش ردیف‌ها را در Appwrite بررسی کن.');
+ }finally{
+  leavingBusy=false;
+  if(exitButton)exitButton.disabled=false;
  }
 }
 
+/* پیام‌ها */
+
 async function createMessage(data){
+ if(!currentRoom||!userId)
+  throw new Error('اتاق یا شناسه بازیکن مشخص نیست.');
+
  return db.createRow({
-  databaseId:CFG.database,tableId:CFG.messages,rowId:Appwrite.ID.unique(),
+  databaseId:CFG.database,
+  tableId:CFG.messages,
+  rowId:Appwrite.ID.unique(),
   data:{
-   roomcode:currentRoom,userId,PlayerName:getName(),
-   content:String(data.content||''),phase:'lobby',
-   messageType:data.messageType,targetUserId:data.targetUserId||'',
+   roomcode:currentRoom,
+   userId:userId,
+   PlayerName:getName(),
+   content:String(data.content||''),
+   phase:'lobby',
+   messageType:data.messageType,
+   targetUserId:data.targetUserId||'',
    isRead:false
   }
  });
 }
 
 async function sendChat(){
- let text=$('chatInput').value.trim();
+ const text=$('chatInput').value.trim();
+
  if(!text||!currentRoom)return;
 
  $('sendChatButton').disabled=true;
 
  try{
-  await createMessage({messageType:'chat',content:text});
+  const result=await createMessage({
+   messageType:'chat',
+   content:text
+  });
+
   $('chatInput').value='';
-  await loadChat();
- }catch(e){say('ارسال پیام ناموفق بود: '+e.message)}
- finally{$('sendChatButton').disabled=false}
+  appendChat(result);
+
+ }catch(e){
+  say('ارسال پیام ناموفق بود: '+e.message);
+ }finally{
+  $('sendChatButton').disabled=false;
+ }
 }
 
 $('chatInput').addEventListener('keydown',e=>{
- if(e.key==='Enter')sendChat();
+ if(e.key==='Enter'){
+  e.preventDefault();
+  sendChat();
+ }
 });
 
 function appendChat(m){
- let id=m.$id||[m.userId,m.content,m.$createdAt].join('|');
+ const id=m.$id||[m.userId,m.content,m.$createdAt].join('|');
+
  if(seenMessages.has(id))return;
  seenMessages.add(id);
 
- let box=$('chatBox');
- let item=document.createElement('div');
+ const box=$('chatBox');
+ const item=document.createElement('div');
  item.className='chat-message';
 
- let b=document.createElement('b');
+ const b=document.createElement('b');
  b.textContent=(m.PlayerName||'بازیکن')+' : ';
 
- let span=document.createElement('span');
+ const span=document.createElement('span');
  span.textContent=m.content||'';
 
  item.append(b,span);
@@ -914,11 +1107,13 @@ function appendChat(m){
 
 async function loadChat(){
  if(!currentRoom||chatRefreshBusy)return;
+
  chatRefreshBusy=true;
 
  try{
-  let r=await db.listRows({
-   databaseId:CFG.database,tableId:CFG.messages,
+  const r=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.messages,
    queries:[
     Appwrite.Query.equal('roomcode',currentRoom),
     Appwrite.Query.equal('phase','lobby'),
@@ -929,7 +1124,13 @@ async function loadChat(){
 
   $('chatBox').innerHTML='';
   seenMessages.clear();
-  for(let m of r.rows)appendChat(m);
+
+  const rows=r.rows||[];
+  rows.sort((a,b)=>
+   new Date(a.$createdAt||0)-new Date(b.$createdAt||0)
+  );
+
+  for(const m of rows)appendChat(m);
 
  }catch(e){
   $('chatBox').textContent='دریافت پیام‌ها ناموفق بود: '+e.message;
@@ -938,13 +1139,73 @@ async function loadChat(){
  }
 }
 
+/* دریافت دوره‌ای چت و سیگنال صوتی */
+
+async function pollRoomMessages(){
+ if(!currentRoom||pollingMessages)return;
+
+ pollingMessages=true;
+
+ try{
+  const r=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.messages,
+   queries:[
+    Appwrite.Query.equal('roomcode',currentRoom),
+    Appwrite.Query.equal('phase','lobby'),
+    Appwrite.Query.limit(100)
+   ]
+  });
+
+  const rows=r.rows||[];
+
+  rows.sort((a,b)=>
+   new Date(a.$createdAt||0)-new Date(b.$createdAt||0)
+  );
+
+  for(const m of rows){
+   if(m.messageType==='chat'){
+    appendChat(m);
+   }
+
+   if(m.messageType==='rtc'){
+    if(seenSignals.has(m.$id))continue;
+    seenSignals.add(m.$id);
+
+    if(m.userId!==userId&&m.targetUserId===userId){
+     await handleSignal(m);
+    }
+   }
+
+   if(m.messageType==='voice-state'){
+    if(m.userId!==userId)updateVoiceState(m);
+   }
+  }
+
+  if(seenSignals.size>500){
+   seenSignals=new Set(Array.from(seenSignals).slice(-250));
+  }
+
+ }catch(e){
+  console.warn('دریافت پیام‌های اتاق:',e);
+ }finally{
+  pollingMessages=false;
+ }
+}
+
+/* ارتباط صوتی WebRTC */
+
 async function signal(to,type,obj){
  if(!currentRoom||!to)return;
 
  await createMessage({
   messageType:'rtc',
   targetUserId:to,
-  content:JSON.stringify({from:userId,type,data:obj})
+  content:JSON.stringify({
+   from:userId,
+   type,
+   data:obj
+  })
  });
 }
 
@@ -952,17 +1213,32 @@ function makePeer(peerId){
  let old=peers.get(peerId);
  if(old)return old;
 
- let pc=new RTCPeerConnection(rtcConfig);
- let trans=pc.addTransceiver('audio',{direction:'sendrecv'});
- let state={pc,trans,ice:[]};
+ const pc=new RTCPeerConnection(rtcConfig);
+
+ const trans=pc.addTransceiver('audio',{
+  direction:'sendrecv'
+ });
+
+ const state={
+  pc,
+  trans,
+  ice:[],
+  offered:false
+ };
+
  peers.set(peerId,state);
 
  if(localStream){
-  trans.sender.replaceTrack(localStream.getAudioTracks()[0]).catch(console.warn);
+  trans.sender.replaceTrack(
+   localStream.getAudioTracks()[0]
+  ).catch(console.warn);
  }
 
  pc.onicecandidate=e=>{
-  if(e.candidate)signal(peerId,'ice',e.candidate.toJSON()).catch(console.warn);
+  if(e.candidate){
+   signal(peerId,'ice',e.candidate.toJSON())
+    .catch(console.warn);
+  }
  };
 
  pc.ontrack=e=>{
@@ -973,16 +1249,31 @@ function makePeer(peerId){
    audio.id='audio-'+peerId;
    audio.autoplay=true;
    audio.playsInline=true;
+   audio.controls=false;
+   audio.muted=false;
    $('audioPeers').append(audio);
   }
 
   audio.srcObject=e.streams[0]||new MediaStream([e.track]);
-  audio.play().catch(()=>{});
+  audio.play().catch(err=>{
+   console.warn('پخش صدای دریافتی نیاز به تعامل کاربر دارد:',err);
+  });
  };
 
  pc.onconnectionstatechange=()=>{
-  let el=$('voice-'+peerId);
-  if(el)el.textContent=pc.connectionState==='connected'?'● صوت متصل':'';
+  const el=$('voice-'+peerId);
+
+  if(el){
+   if(pc.connectionState==='connected'){
+    el.textContent='● صوت متصل';
+   }else if(pc.connectionState==='connecting'){
+    el.textContent='در حال اتصال صوت...';
+   }else if(pc.connectionState==='failed'){
+    el.textContent='اتصال صوت ناموفق';
+   }else{
+    el.textContent='';
+   }
+  }
  };
 
  return state;
@@ -992,73 +1283,143 @@ async function syncPeers(){
  if(!currentRoom)return;
 
  try{
-  let r=await db.listRows({
-   databaseId:CFG.database,tableId:CFG.players,
+  const r=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.players,
    queries:[
     Appwrite.Query.equal('roomcode',currentRoom),
     Appwrite.Query.limit(100)
    ]
   });
 
-  for(let p of r.rows){
-   if(!p.UserId||p.UserId===userId)continue;
+  const activeIds=new Set(
+   (r.rows||[])
+    .map(p=>p.UserId)
+    .filter(id=>id&&id!==userId)
+  );
 
-   let st=makePeer(p.UserId);
+  for(const [id,st] of peers.entries()){
+   if(!activeIds.has(id)){
+    try{st.pc.close()}catch(e){}
+    peers.delete(id);
 
-   if(userId.localeCompare(p.UserId)<0&&!st.offered){
+    const audio=$('audio-'+id);
+    if(audio)audio.remove();
+   }
+  }
+
+  for(const peerId of activeIds){
+   const st=makePeer(peerId);
+
+   if(userId.localeCompare(peerId)<0&&
+      !st.offered&&
+      st.pc.signalingState==='stable'){
+
     st.offered=true;
 
     try{
-     let offer=await st.pc.createOffer();
+     const offer=await st.pc.createOffer();
      await st.pc.setLocalDescription(offer);
-     await signal(p.UserId,'offer',st.pc.localDescription.toJSON());
-    }catch(e){console.warn('offer',e)}
+
+     await signal(
+      peerId,
+      'offer',
+      st.pc.localDescription.toJSON()
+     );
+
+    }catch(e){
+     st.offered=false;
+     console.warn('ساخت اتصال صوتی ناموفق:',e);
+    }
    }
   }
- }catch(e){console.warn(e)}
+
+ }catch(e){
+  console.warn('همگام‌سازی صوت:',e);
+ }
 }
 
 async function handleSignal(m){
  if(m.targetUserId!==userId)return;
 
  let payload;
- try{payload=JSON.parse(m.content)}catch(e){return}
+
+ try{
+  payload=JSON.parse(m.content);
+ }catch(e){
+  return;
+ }
+
  if(!payload?.from||payload.from===userId)return;
 
- let st=makePeer(payload.from),pc=st.pc;
+ const st=makePeer(payload.from);
+ const pc=st.pc;
 
  try{
   if(payload.type==='offer'){
-   await pc.setRemoteDescription(new RTCSessionDescription(payload.data));
-   let answer=await pc.createAnswer();
-   await pc.setLocalDescription(answer);
-   await signal(payload.from,'answer',pc.localDescription.toJSON());
+   await pc.setRemoteDescription(
+    new RTCSessionDescription(payload.data)
+   );
 
-   for(let c of st.ice.splice(0))await pc.addIceCandidate(c);
+   const answer=await pc.createAnswer();
+   await pc.setLocalDescription(answer);
+
+   await signal(
+    payload.from,
+    'answer',
+    pc.localDescription.toJSON()
+   );
+
+   for(const c of st.ice.splice(0)){
+    await pc.addIceCandidate(c);
+   }
 
   }else if(payload.type==='answer'){
    if(pc.signalingState==='have-local-offer'){
-    await pc.setRemoteDescription(new RTCSessionDescription(payload.data));
-    for(let c of st.ice.splice(0))await pc.addIceCandidate(c);
+    await pc.setRemoteDescription(
+     new RTCSessionDescription(payload.data)
+    );
+
+    for(const c of st.ice.splice(0)){
+     await pc.addIceCandidate(c);
+    }
    }
 
   }else if(payload.type==='ice'){
-   let c=new RTCIceCandidate(payload.data);
-   if(pc.remoteDescription)await pc.addIceCandidate(c);
-   else st.ice.push(c);
+   const c=new RTCIceCandidate(payload.data);
+
+   if(pc.remoteDescription){
+    await pc.addIceCandidate(c);
+   }else{
+    st.ice.push(c);
+   }
   }
- }catch(e){console.warn('signal error',e)}
+
+ }catch(e){
+  console.warn('خطای سیگنال صوتی:',e);
+ }
 }
 
 function updateVoiceState(m){
- if(m.targetUserId!==''&&m.targetUserId!==userId)return;
+ const el=$('voice-'+m.userId);
+ if(!el)return;
 
- let el=$('voice-'+m.userId);
- if(el)el.textContent=m.content==='on'?'🎙 در حال صحبت':'● آماده صوتی';
+ el.textContent=m.content==='on'
+  ?'🎙 در حال صحبت'
+  :'● آماده صوتی';
 }
+
+/* میکروفون و Push-to-Talk */
 
 async function ensureMicrophone(){
  if(localStream)return;
+
+ if(!navigator.mediaDevices||
+    !navigator.mediaDevices.getUserMedia){
+  throw new Error(
+   'دسترسی میکروفون پشتیبانی نمی‌شود. صفحه باید در محیط HTTPS باز شود.'
+  );
+ }
 
  localStream=await navigator.mediaDevices.getUserMedia({
   audio:{
@@ -1069,56 +1430,75 @@ async function ensureMicrophone(){
   video:false
  });
 
- for(let st of peers.values()){
-  let track=localStream.getAudioTracks()[0];
+ const track=localStream.getAudioTracks()[0];
+
+ if(!track){
+  throw new Error('میکروفون شناسایی نشد.');
+ }
+
+ track.enabled=false;
+
+ for(const st of peers.values()){
   await st.trans.sender.replaceTrack(track);
-  track.enabled=false;
  }
 }
 
 async function pttDown(e){
- e.preventDefault();
+ if(e)e.preventDefault();
+
  if(pttActive||!currentRoom)return;
 
  try{
-  if(!navigator.mediaDevices?.getUserMedia){
-   throw new Error('مرورگر یا محیط فعلی از میکروفون پشتیبانی نمی‌کند؛ بازی را با HTTPS باز کن.');
+  if(e&&e.currentTarget&&e.pointerId!==undefined){
+   try{e.currentTarget.setPointerCapture(e.pointerId)}catch(err){}
   }
 
+  $('voiceStatus').textContent='در حال فعال‌سازی میکروفون...';
+
   await ensureMicrophone();
+
   pttActive=true;
 
-  localStream.getAudioTracks().forEach(t=>t.enabled=true);
+  localStream.getAudioTracks().forEach(t=>{
+   t.enabled=true;
+  });
 
   $('micButton').classList.add('active');
   $('micButton').textContent='در حال صحبت… (برای قطع رها کن)';
-  $('voiceStatus').textContent='میکروفون روشن است؛ دکمه را رها کن تا قطع شود.';
+  $('voiceStatus').textContent='🎙 میکروفون روشن است.';
 
-  await createMessage({messageType:'voice-state',content:'on'});
-
-  for(let [id,st] of peers){
-   if(!st.offered&&userId.localeCompare(id)<0){
-    st.offered=true;
-    let offer=await st.pc.createOffer();
-    await st.pc.setLocalDescription(offer);
-    await signal(id,'offer',st.pc.localDescription.toJSON());
-   }
+  try{
+   await createMessage({
+    messageType:'voice-state',
+    content:'on'
+   });
+  }catch(err){
+   console.warn('ارسال وضعیت میکروفون:',err);
   }
+
+  await syncPeers();
 
  }catch(e){
   pttActive=false;
-  $('voiceStatus').textContent='دسترسی میکروفون ناموفق: '+e.message;
+
+  $('voiceStatus').textContent=
+   'دسترسی میکروفون ناموفق: '+e.message;
+
+  console.error(e);
  }
 }
 
 async function pttUp(e){
  if(e)e.preventDefault();
+
  if(!pttActive)return;
 
  pttActive=false;
 
  if(localStream){
-  localStream.getAudioTracks().forEach(t=>t.enabled=false);
+  localStream.getAudioTracks().forEach(t=>{
+   t.enabled=false;
+  });
  }
 
  $('micButton').classList.remove('active');
@@ -1126,8 +1506,13 @@ async function pttUp(e){
  $('voiceStatus').textContent='میکروفون خاموش است.';
 
  try{
-  await createMessage({messageType:'voice-state',content:'off'});
- }catch(e){}
+  await createMessage({
+   messageType:'voice-state',
+   content:'off'
+  });
+ }catch(e){
+  console.warn(e);
+ }
 }
 
 async function closeVoice(){
@@ -1138,19 +1523,26 @@ async function closeVoice(){
   localStream=null;
  }
 
- for(let st of peers.values()){
+ for(const st of peers.values()){
   try{st.pc.close()}catch(e){}
  }
 
  peers.clear();
+
  $('audioPeers').innerHTML='';
  $('micButton').classList.remove('active');
  $('micButton').textContent='برای صحبت نگه دار';
+ $('voiceStatus').textContent='میکروفون خاموش است.';
 }
 
+/* شروع برنامه */
+
 (async()=>{
- let a=await ensureAuth();
- if(a)revealApp();
+ const a=await ensureAuth();
+
+ if(a){
+  revealApp();
+ }
 })();
 </script>
 </body>
