@@ -518,40 +518,73 @@ async function refreshPlayers(){
   }catch(e){say("خطا در دریافت بازیکنان: "+e.message)}
 }
 
+/* اصلاح شده: فقط اتاقی نمایش داده می‌شود که گرداننده آن واقعاً در جدول بازیکنان حضور داشته باشد. */
 async function loadPublicRooms(){
   if(!userId||loadingRooms||!$("publicRooms"))return;
   loadingRooms=true;
   try{
     let r=await db.listRows({
       databaseId:CFG.database,tableId:CFG.rooms,
-      queries:[Appwrite.Query.equal("status","waiting"),Appwrite.Query.equal("currentphase","lobby"),Appwrite.Query.limit(40)]
+      queries:[
+        Appwrite.Query.equal("status","waiting"),
+        Appwrite.Query.equal("currentphase","lobby"),
+        Appwrite.Query.limit(40)
+      ]
     });
+
     let box=$("publicRooms");
     box.innerHTML="";
-    if(!r.rows.length){box.textContent="فعلاً اتاقی وجود ندارد.";return}
+    let visibleCount=0;
+
     for(let room of r.rows){
+      if(!room.roomcode||!room.hostId)continue;
+
       let pr=await db.listRows({
         databaseId:CFG.database,tableId:CFG.players,
-        queries:[Appwrite.Query.equal("roomcode",room.roomcode),Appwrite.Query.limit(100)]
+        queries:[
+          Appwrite.Query.equal("roomcode",room.roomcode),
+          Appwrite.Query.limit(100)
+        ]
       });
+
+      const hostIsPresent=pr.rows.some(
+        p=>p.UserId===room.hostId
+      );
+
+      if(!hostIsPresent)continue;
+
       let full=pr.rows.length>=(Number(room.maxplayers)||12);
+
       let card=document.createElement("div");
       card.className="room-card";
+
       let h=document.createElement("h4");
       h.textContent="اتاق "+room.roomcode;
+
       let info=document.createElement("div");
       info.className="room-info";
       info.textContent="بازیکنان: "+pr.rows.length+" از "+(room.maxplayers||12)+" | "+scenarioName(room.scenario);
+
       let b=document.createElement("button");
       b.textContent=full?"ظرفیت تکمیل":"ورود به اتاق";
       b.disabled=full;
       b.onclick=()=>{$("roomCode").value=room.roomcode;joinRoom()};
+
       card.append(h,info,b);
       box.appendChild(card);
+      visibleCount++;
     }
-  }catch(e){$("publicRooms").textContent="خطا در دریافت اتاق‌ها: "+e.message}
-  finally{loadingRooms=false}
+
+    if(visibleCount===0){
+      box.textContent="فعلاً اتاق فعالی وجود ندارد.";
+    }
+  }catch(e){
+    $("publicRooms").textContent="خطا در دریافت اتاق‌ها: "+e.message;
+  }finally{
+    loadingRooms=false;
+  }
 }
+
 async function leaveRoom(){
   await cleanupVoice();
   for(let s of [playersSub,msgSub]){if(s){try{await s()}catch(e){}}}
