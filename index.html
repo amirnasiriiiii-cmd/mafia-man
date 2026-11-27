@@ -3,529 +3,870 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#111014">
 <title>MAFIA MAN</title>
 <script src="https://cdn.jsdelivr.net/npm/appwrite@29.0.0"></script>
 <style>
-:root{--g:#e5bd70;--bg:#09090d;--p:#191820}
+:root{--gold:#e5bd70;--gold2:#a97831;--bg:#09090d;--panel:#17161c;--muted:#aaa092}
 *{box-sizing:border-box}
-body{margin:0;padding:14px;background:radial-gradient(ellipse at top,#45321f,#09090d 65%);color:#f7f2e8;font:14px Tahoma,Arial;min-height:100vh}
-main{max-width:600px;margin:auto}
-.panel,.welcome{background:linear-gradient(145deg,#25212a,#14141b);border:1px solid #74572e;border-radius:17px;padding:18px;margin:14px 0}
-.welcome{text-align:center;margin:3vh auto;max-width:480px;padding:28px 20px}
-.logo{font-size:48px;color:var(--g)}
-h1,h3{color:var(--g)}
-h1{text-align:center;direction:ltr}
-.subtitle{text-align:center;color:#b7a58a}
+body{margin:0;padding:18px;min-height:100vh;background:radial-gradient(ellipse at 50% -10%,#49351f 0,#211a20 30%,#09090d 75%);background-attachment:fixed;color:#f7f2e8;font-family:Tahoma,Arial,sans-serif}
+main{max-width:580px;margin:auto}
 .hidden{display:none!important}
-input,select,button{font:inherit;border-radius:10px;padding:12px;width:100%;margin:6px 0}
-input,select{background:#0e1017;border:1px solid #514638;color:white}
-button{border:0;background:linear-gradient(110deg,#f2d58f,#a9762d);color:#17120a;font-weight:bold;cursor:pointer}
-button.secondary{background:#343746;color:#fff}
-button:disabled{opacity:.5}
-.small{font-size:12px;color:#b7b0a5;line-height:2}
-.auth-tabs{display:flex;gap:7px}
-.auth-tabs button{background:#34313a;color:#eee}
-.auth-tabs button.active{background:var(--g);color:#17120a}
-.otp{display:none}.otp.show{display:block}
+.welcome{position:relative;isolation:isolate;overflow:hidden;max-width:480px;margin:4vh auto 25px;padding:32px 23px 22px;text-align:center;background:linear-gradient(155deg,#292226,#111117 62%,#17151a);border:1px solid #9c773d;border-radius:25px;box-shadow:0 25px 80px #000b,inset 0 1px #ffffff12}
+.welcome:before{content:"";position:absolute;z-index:-1;width:260px;height:210px;top:-150px;left:calc(50% - 130px);background:#d39c3e;filter:blur(75px);opacity:.28}
+.logo{width:82px;height:82px;margin:0 auto 15px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#49351f,#151419 70%);box-shadow:0 0 0 7px #c99a4310,0 0 35px #c99a4330;color:#f0ce83;font-size:43px}
+.eyebrow{font-size:9px;letter-spacing:4px;color:#b89a67;direction:ltr}
+.brand{font-size:36px;letter-spacing:2px;margin:7px 0;color:#f2d48d;direction:ltr;text-shadow:0 3px 22px #d3a44a35}
+.brand span{color:#fff}
+.tagline{font-size:12px;color:#c0b39d;line-height:2;margin:8px 0 22px}
+.rule{display:flex;align-items:center;gap:12px;color:#d5b878;font-size:12px;margin:0 0 18px}
+.rule i{height:1px;flex:1;background:linear-gradient(90deg,transparent,#8b6b37)}
+.field-label{display:block;text-align:right;font-size:12px;color:#dfcda9;margin:13px 2px 6px}
+input,select{width:100%;height:48px;padding:0 13px;margin:0 0 8px;border:1px solid #514638;border-radius:11px;background:#0d0e13;color:#fff;font:14px Tahoma;outline:none}
+input:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px #c99a4320}
+input::placeholder{color:#777}
+.auth-tabs{display:flex;gap:7px;padding:5px;background:#0c0d12;border:1px solid #302b25;border-radius:12px;margin:15px 0}
+.auth-tab{flex:1;border:0;border-radius:8px;padding:11px 8px;background:transparent;color:#aaa092;font:12px Tahoma;cursor:pointer}
+.auth-tab.active{background:linear-gradient(120deg,#e8c77e,#9c702e);color:#17120a;font-weight:bold}
+button{font-family:Tahoma;cursor:pointer}
+.primary{width:100%;min-height:50px;margin:8px 0 3px;border:1px solid #f0d28c;border-radius:11px;background:linear-gradient(110deg,#f2d58f,#c39342 55%,#a9762d);color:#19130b;font-weight:bold;font-size:14px;box-shadow:0 7px 20px #bd8d382b}
+.primary:disabled,button:disabled{opacity:.55;cursor:wait}
+.otp{display:none;margin-top:12px;padding-top:8px;border-top:1px solid #3d3327}
+.otp.show{display:block}
+.text-btn{border:0;background:transparent;color:var(--gold);padding:10px;font-size:12px}
+.guest-copy{font-size:12px;color:#b7b0a5;line-height:2;margin:8px 0 13px}
+.auth-message{min-height:23px;margin:10px 0 0;color:#e6b7a0;font-size:11px;line-height:1.9}
+.footer{border-top:1px solid #393027;margin-top:18px;padding-top:14px;color:#8d8374;font-size:10px;line-height:2}
+h1{text-align:center;color:var(--gold);font-size:32px}
+.subtitle{text-align:center;color:#b7a58a;margin-bottom:25px}
+.panel{background:linear-gradient(145deg,#20202a,#14141c);border:1px solid #5d4827;border-radius:17px;padding:20px;margin:15px 0}
+h3{color:var(--gold);margin-top:0}
+.panel input,.panel select,.panel button{width:100%;padding:13px;margin:7px 0;border:1px solid #4b4235;border-radius:9px;font-size:14px}
+.panel input,.panel select{background:#10131c;color:white}
+.panel button{background:linear-gradient(120deg,#f0cf78,#b98528);color:#17120a;font-weight:bold;border:0}
+.panel button.secondary{background:#343746;color:white}
+.small{font-size:12px;color:#aaa;line-height:2}
 #players{list-style:none;padding:0}
-#players li,.room-card{padding:11px;margin:7px 0;border-radius:10px;background:#292b36;border:1px solid #51432d}
-.room-card h4{color:var(--g);margin:0 0 8px}
-.room-info{line-height:2;color:#ddd}
-.chatlog{height:220px;overflow:auto;background:#0d0e14;border:1px solid #514638;border-radius:10px;padding:10px;margin:10px 0}
-.chatmsg{padding:7px 3px;border-bottom:1px solid #ffffff12;line-height:1.8;overflow-wrap:anywhere}
-.chatmsg b{color:var(--g)}
-.voicebar{display:flex;gap:8px;align-items:center}
-.voicebar button{flex:1;min-height:55px;touch-action:none;user-select:none}
-.voicebar button.talking{background:#a33;color:white}
-.status{font-size:12px;color:#b7b0a5;line-height:1.9}
-#message{white-space:pre-wrap;line-height:1.9;color:#f1ce79}
-.profile-avatar{font-size:42px;margin:8px auto}
-.profile-title{color:var(--g);font-size:18px;margin:10px 0}
-hr{border:0;border-top:1px solid #ffffff20;margin:18px 0}
-.lux-title{text-align:center;font-size:23px;font-weight:900;color:#f2d58f;text-shadow:0 2px 18px #b98236;margin:4px 0 18px}
-.lux-summary{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
-.lux-pill{background:linear-gradient(135deg,#302719,#17151a);border:1px solid #9b773e;border-radius:30px;padding:9px 13px;color:#f2d58f;font-size:12px;text-align:center}
-.lux-room-info{display:block;margin:10px auto 18px}
-.host-section{background:radial-gradient(ellipse at top,#594321,#211b18 65%);border:1px solid #c49a50;border-radius:18px;padding:14px;margin:14px 0 20px;box-shadow:0 8px 28px #0008}
-.host-section h3{text-align:center;margin:3px 0 13px;color:#f5d68e}
-.host-card{display:flex;align-items:center;justify-content:center;gap:13px;min-height:92px;padding:13px;border:1px solid #d5ad65;border-radius:15px;background:linear-gradient(120deg,#49351d,#211a17)}
-.host-crown{font-size:28px}
-.host-avatar{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:#17130f;border:2px solid #e4bd70;font-size:31px}
-.host-name{font-size:16px;font-weight:bold;color:#ffe6ad}
-.host-label{font-size:10px;letter-spacing:2px;color:#e6c17c;margin-top:5px}
-.lux-player-heading{text-align:center;margin:18px 0 12px}
-.player-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.player-card,.empty-slot{min-width:0;min-height:112px;border:1px solid #66502f;border-radius:14px;background:linear-gradient(145deg,#28232a,#15141b);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px 5px}
-.player-avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#45331e,#17151a);border:1px solid #b68b49;font-size:25px;margin-bottom:7px}
-.player-name{font-size:12px;font-weight:bold;color:#f7edda;max-width:100%;overflow-wrap:anywhere}
-.player-status{font-size:10px;margin-top:6px;color:#bcb3a4}
-.player-ready{color:#9de0a7}.player-waiting{color:#e4bc72}
-.empty-slot{border-style:dashed;background:#17161c;color:#a69b89}
-.empty-plus{font-size:27px;color:#cba35d;line-height:1.2}
-.empty-label{font-size:10px;margin-top:5px}
-@media(max-width:360px){.player-grid{gap:7px}.player-card,.empty-slot{min-height:100px;padding:7px 3px}.player-avatar{width:42px;height:42px}}
+#players li,.room-card{background:#292b36;border:1px solid #51432d;padding:12px;margin:8px 0;border-radius:10px}
+#message{white-space:pre-wrap;line-height:2;color:#f1ce79}
+.gold{color:var(--gold)}
+.public-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.public-title h3{margin:0}
+.online-dot{width:9px;height:9px;background:#58d68d;display:inline-block;border-radius:50%;margin-left:5px}
+.room-card{background:linear-gradient(145deg,#292936,#171720);border-color:#80632e;padding:15px}
+.room-card h4{color:#f0cf78;margin:0 0 10px}
+.room-info{color:#ccc;font-size:13px;line-height:2.3}
+.room-status{color:#76d69b;font-size:12px}
+.room-status.full{color:#e9a0a0}
+.empty-rooms{text-align:center;padding:20px 10px;color:#aaa;font-size:13px;line-height:2}
+.refresh-info{color:#888;font-size:11px;text-align:center}
+hr{border:0;border-top:1px solid #49404a;margin:20px 0}
+@media(max-width:420px){body{padding:12px}.welcome{margin:2vh auto 18px;padding:27px 18px 20px}.brand{font-size:32px}}
 </style>
 </head>
 <body>
 <main>
+
 <section id="welcome" class="welcome">
-<div class="logo">♠</div>
-<div style="direction:ltr;letter-spacing:3px;color:#b89a67">THE CITY NEVER SLEEPS</div>
-<h1>MAFIA MAN</h1>
-<p class="small">هر شب، یک راز تازه؛ هر رأی، سرنوشت یک شهر</p>
-<div class="profile-title">ساخت پروفایل بازیکن</div>
-<div class="profile-avatar" id="avatarPreview">🎭</div>
-<label class="small">نام بازیکن</label>
-<input id="welcomeName" maxlength="50" placeholder="نام خود را وارد کن">
-<label class="small">سن بازیکن</label>
-<input id="playerAge" type="number" min="8" max="99" placeholder="سن خود را وارد کن">
-<label class="small">انتخاب جنسیت</label>
-<select id="playerGender"><option value="">جنسیت خود را انتخاب کن</option><option value="مرد">مرد</option><option value="زن">زن</option></select>
-<label class="small">انتخاب آواتار</label>
-<select id="playerAvatar">
-<option value="🎭">🎭 نقاب</option><option value="🕵️">🕵️ کارآگاه</option><option value="👑">👑 پادشاه</option><option value="🦊">🦊 روباه</option><option value="🐺">🐺 گرگ</option><option value="🦁">🦁 شیر</option><option value="🎩">🎩 جنتلمن</option><option value="💀">💀 اسکلت</option><option value="🥷">🥷 نینجا</option><option value="🦅">🦅 عقاب</option><option value="🐉">🐉 اژدها</option><option value="🧛">🧛 خون‌آشام</option>
-</select>
-<div class="auth-tabs">
-<button id="phoneTab" class="active" onclick="showMode('phone')">ورود با موبایل</button>
-<button id="guestTab" onclick="showMode('guest')">ورود مهمان</button>
-</div>
-<div id="phoneMode">
-<label class="small">شماره موبایل با کد کشور</label>
-<input id="phoneNumber" type="tel" dir="ltr" placeholder="+989121234567">
-<button id="sendCode" onclick="startPhoneLogin()">ارسال کد تأیید</button>
-<div id="otpArea" class="otp"><input id="otpCode" inputmode="numeric" placeholder="کد پیامک‌شده"><button onclick="verifyPhoneCode()">تأیید و ورود</button></div>
-</div>
-<div id="guestMode" class="hidden"><p class="small">بدون ساخت حساب وارد لابی شو.</p><button id="guestButton" onclick="continueAsGuest()">ورود به بازی به‌صورت مهمان</button></div>
-<p id="authMessage" class="status"></p>
+ <div class="logo">♠</div>
+ <div class="eyebrow">THE CITY NEVER SLEEPS</div>
+ <div class="brand">MAFIA <span>MAN</span></div>
+ <p class="tagline">هر شب، یک راز تازه؛ هر رأی، سرنوشت یک شهر</p>
+ <div class="rule"><i></i><span>ورود به دنیای مافیا</span><i></i></div>
+
+ <label class="field-label" for="welcomeName">نام بازیکن</label>
+ <input id="welcomeName" maxlength="50" autocomplete="nickname" placeholder="نامی که دیگران تو را با آن می‌شناسند">
+
+ <div class="auth-tabs">
+  <button id="phoneTab" class="auth-tab active" onclick="showMode('phone')">ورود با موبایل</button>
+  <button id="guestTab" class="auth-tab" onclick="showMode('guest')">ورود مهمان</button>
+ </div>
+
+ <div id="phoneMode">
+  <label class="field-label" for="phoneNumber">شماره موبایل با کد کشور</label>
+  <input id="phoneNumber" type="tel" inputmode="tel" autocomplete="tel" placeholder="+989121234567" dir="ltr">
+  <button id="sendCodeButton" class="primary" onclick="startPhoneLogin()">ارسال کد تأیید</button>
+
+  <div id="otpArea" class="otp">
+   <label class="field-label" for="otpCode">کد تأیید پیامکی</label>
+   <input id="otpCode" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="کد پیامک‌شده" dir="ltr">
+   <button id="verifyCodeButton" class="primary" onclick="verifyPhoneCode()">تأیید کد و ورود به بازی</button>
+   <button class="text-btn" onclick="resetPhoneLogin()">تغییر شماره موبایل</button>
+  </div>
+ </div>
+
+ <div id="guestMode" class="hidden">
+  <p class="guest-copy">بدون ساخت حساب، سریع وارد لابی شو و بازی را شروع کن.</p>
+  <button id="guestButton" class="primary" onclick="continueAsGuest()">ورود سریع به‌عنوان مهمان</button>
+ </div>
+
+ <p id="authMessage" class="auth-message" aria-live="polite"></p>
+ <div class="footer">♜ بازی هوشمندانه است؛ به هیچ‌کس اعتماد نکن ♜</div>
 </section>
 
 <div id="app" class="hidden">
-<h1>MAFIA MAN</h1><p class="subtitle">بازی آنلاین مافیا</p>
-<section class="panel">
-<h3>پروفایل بازیکن</h3><div id="profileSummary" class="small"></div>
-<button class="secondary" onclick="editProfile()">ویرایش پروفایل</button>
-</section>
-<section class="panel" id="entry">
-<h3>ساخت اتاق جدید</h3>
-<label class="small">ظرفیت اتاق</label>
-<select id="maxPlayers"><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option selected>12</option></select>
-<label class="small">سناریو</label>
-<select id="scenario"><option value="classic">کلاسیک</option><option value="commando">تکاور</option><option value="negotiation">مذاکره</option></select>
-<button id="createButton" onclick="createRoom()">ساخت اتاق</button>
-<hr><h3>ورود با کد اتاق</h3>
-<input id="roomCode" placeholder="کد اتاق را وارد کن">
-<button class="secondary" onclick="joinRoom()">ورود به اتاق</button>
-</section>
-<section class="panel" id="publicLobby">
-<h3>🌐 لابی عمومی</h3><div id="publicRooms" class="small">در حال دریافت اتاق‌ها...</div>
-<button class="secondary" onclick="loadPublicRooms()">بروزرسانی اتاق‌ها</button>
-</section>
-<section class="panel hidden" id="game">
-<div class="lux-title">♛ تالار سلطنتی مافیا ♛</div>
-<div class="lux-summary"><div class="lux-pill">کد اتاق: <span id="roomLabel"></span></div><div class="lux-pill" id="playerCount">بازیکنان حاضر: ۰ / ۱۲</div></div>
-<div class="lux-pill lux-room-info" id="roomDetails"></div>
-<section class="host-section"><h3>👑 جایگاه اختصاصی گرداننده</h3><div id="hostSlot"></div></section>
-<h3 class="lux-player-heading">♠ جایگاه بازیکنان ♠</h3>
-<div id="players" class="player-grid"></div>
-<button id="readyButton" onclick="setReady()">آماده‌ام</button>
-<button class="secondary" onclick="leaveRoom()">خروج از اتاق</button>
-<hr><h3>💬 گفت‌وگوی لابی</h3>
-<p class="small">پیام‌های این بخش برای همه اعضای همین اتاق قابل مشاهده است.</p>
-<div id="chatlog" class="chatlog" aria-live="polite"></div>
-<input id="chatInput" maxlength="4000" placeholder="پیامت را بنویس...">
-<button onclick="sendChat()">ارسال پیام</button>
-<hr><h3>🎙 گفت‌وگوی صوتی</h3>
-<p class="small">برای صحبت، دکمه را نگه دار؛ با رها کردن، میکروفون بی‌صدا می‌شود.</p>
-<div class="voicebar"><button id="ptt" onpointerdown="startTalking(event)" onpointerup="stopTalking(event)" onpointercancel="stopTalking(event)" onlostpointercapture="stopTalking(event)">نگه دار و صحبت کن</button></div>
-<p id="voiceStatus" class="status">صوت در حالت آماده‌به‌کار است.</p><div id="remoteAudios"></div>
-</section>
-<section class="panel"><p id="message">در حال اتصال...</p></section>
+ <h1>MAFIA MAN</h1>
+ <p class="subtitle">بازی آنلاین مافیا</p>
+
+ <section class="panel" id="entry">
+  <h3>ساخت اتاق جدید</h3>
+  <label class="small">تعداد بازیکنان</label>
+  <select id="maxPlayers">
+   <option value="4">۴ بازیکن</option>
+   <option value="5">۵ بازیکن</option>
+   <option value="6">۶ بازیکن</option>
+   <option value="7">۷ بازیکن</option>
+   <option value="8">۸ بازیکن</option>
+   <option value="9">۹ بازیکن</option>
+   <option value="10">۱۰ بازیکن</option>
+   <option value="11">۱۱ بازیکن</option>
+   <option value="12" selected>۱۲ بازیکن</option>
+  </select>
+
+  <label class="small">سناریوی بازی</label>
+  <select id="scenario">
+   <option value="classic">کلاسیک</option>
+   <option value="commando">تکاور</option>
+   <option value="negotiation">مذاکره</option>
+  </select>
+
+  <button id="createButton" onclick="createRoom()">ساخت اتاق جدید</button>
+  <hr>
+  <h3>ورود به اتاق دوستان</h3>
+  <input id="roomCode" maxlength="20" placeholder="کد اتاق">
+  <button id="joinButton" class="secondary" onclick="joinRoom()">ورود به اتاق</button>
+ </section>
+
+ <section class="panel" id="publicLobby">
+  <div class="public-title">
+   <h3>🌐 لابی عمومی بازی‌ها</h3>
+   <span class="small"><span class="online-dot"></span>عمومی</span>
+  </div>
+  <p class="small">اتاق‌هایی را که بازیکنان دیگر ساخته‌اند ببین و به بازی آن‌ها بپیوند.</p>
+  <button class="secondary" id="refreshRoomsButton" onclick="loadPublicRooms()">🔄 بروزرسانی اتاق‌ها</button>
+  <div id="publicRooms"><div class="empty-rooms">در حال دریافت اتاق‌ها...</div></div>
+  <p class="refresh-info">بروزرسانی خودکار هر ۱۵ ثانیه</p>
+ </section>
+
+ <section class="panel hidden" id="game">
+  <h3>اتاق بازی</h3>
+  <p>کد اتاق: <b class="gold" id="roomLabel"></b></p>
+  <p class="small" id="hostLabel"></p>
+  <p class="small" id="capacityLabel"></p>
+  <p class="small" id="scenarioLabel"></p>
+  <hr>
+  <h3>بازیکنان حاضر</h3>
+  <ul id="players"></ul>
+  <button id="readyButton" onclick="setReady()">آماده‌ام</button>
+  <button class="secondary" onclick="leaveRoom()">خروج از اتاق</button>
+ </section>
+
+ <section class="panel">
+  <p id="message">در حال اتصال...</p>
+ </section>
 </div>
 </main>
 
 <script>
 "use strict";
+
+/* تنظیمات اصلی Appwrite */
 const CFG={
-endpoint:"https://fra.cloud.appwrite.io/v1",
-project:"6b07ab18000a7a4b0bcc",
-database:"6b07af6f000a7a4b0bcc",
-rooms:"6b07af9d00191c9f315e",
-players:"6b07b22000258b36e472",
-messages:"6b07b4dd003d807c28e1"
+ endpoint:"https://fra.cloud.appwrite.io/v1",
+ project:"6b07ab18000a7a4b0bcc",
+ database:"6b07af6f000798319ab0",
+ rooms:"6b07af9d00191c9f315e",
+ players:"6b07b22000258b36e472"
 };
 
-const client=new Appwrite.Client().setEndpoint(CFG.endpoint).setProject(CFG.project);
+const client=new Appwrite.Client()
+ .setEndpoint(CFG.endpoint)
+ .setProject(CFG.project);
+
 const account=new Appwrite.Account(client);
 const db=new Appwrite.TablesDB(client);
-const realtime=new Appwrite.Realtime(client);
 
-let userId=null,currentRoom="",currentHost="",myPlayerRow="";
-let currentMaxPlayers=12,currentScenario="classic",ready=false;
-let pendingPhoneUserId=null,playersSub=null,msgSub=null,lobbyTimer=null,loadingRooms=false;
-let peerConnections=new Map(),localStream=null,remoteStreams=new Map(),queuedIce=new Map();
+let userId=null;
+let currentRoom="";
+let currentRoomRow="";
+let currentHost="";
+let myPlayerRow="";
+let currentMaxPlayers=12;
+let currentScenario="classic";
+let ready=false;
+let lobbyTimer=null;
+let roomTimer=null;
+let loadingRooms=false;
+let pendingPhoneUserId=null;
 
-const $=id=>document.getElementById(id);
-const say=m=>$("message").textContent=m;
-const authMessage=m=>$("authMessage").textContent=m||"";
-const getName=()=>$("welcomeName").value.trim();
-const getAge=()=>$("playerAge").value.trim();
-const getGender=()=>$("playerGender").value;
-const getAvatar=()=>$("playerAvatar").value;
-const getDisplayName=()=>getAvatar()+" "+getName();
-const makeCode=()=>Math.random().toString(36).slice(2,8).toUpperCase();
-const scenarioName=v=>({classic:"کلاسیک",commando:"تکاور",negotiation:"مذاکره"})[v]||"کلاسیک";
+function el(id){
+ return document.getElementById(id);
+}
 
-function validateProfile(){
-if(!getName())return "نام بازیکن را وارد کن.";
-if(!getAge()||Number(getAge())<8||Number(getAge())>99)return "سن معتبر بین ۸ تا ۹۹ وارد کن.";
-if(!getGender())return "جنسیت را انتخاب کن.";
-if(!getAvatar())return "آواتار را انتخاب کن.";
-return "";
+function say(message){
+ el("message").textContent=message;
 }
-function saveProfile(){
-localStorage.setItem("mafia_name",getName());
-localStorage.setItem("mafia_age",getAge());
-localStorage.setItem("mafia_gender",getGender());
-localStorage.setItem("mafia_avatar",getAvatar());
+
+function getName(){
+ return el("welcomeName").value.trim();
 }
-function loadProfile(){
-$("welcomeName").value=localStorage.getItem("mafia_name")||"";
-$("playerAge").value=localStorage.getItem("mafia_age")||"";
-$("playerGender").value=localStorage.getItem("mafia_gender")||"";
-$("playerAvatar").value=localStorage.getItem("mafia_avatar")||"🎭";
-updateAvatarPreview();
+
+function makeCode(){
+ return Math.random().toString(36).slice(2,8).toUpperCase();
 }
-function updateAvatarPreview(){$("avatarPreview").textContent=getAvatar()||"🎭"}
-function showProfileSummary(){$("profileSummary").textContent=getAvatar()+" "+getName()+" | سن: "+getAge()+" | جنسیت: "+getGender()}
-function editProfile(){$("app").classList.add("hidden");$("welcome").classList.remove("hidden");authMessage("پروفایل خود را ویرایش کن.")}
-function showMode(m){
-let guest=m==="guest";
-$("phoneMode").classList.toggle("hidden",guest);
-$("guestMode").classList.toggle("hidden",!guest);
-$("phoneTab").classList.toggle("active",!guest);
-$("guestTab").classList.toggle("active",guest);
-authMessage("");
+
+function scenarioName(value){
+ return ({
+  classic:"کلاسیک",
+  commando:"تکاور",
+  negotiation:"مذاکره"
+ })[value]||"کلاسیک";
 }
-function normalizePhone(v){
-let p=String(v||"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[\s()-]/g,"");
-if(p.startsWith("00"))p="+"+p.slice(2);
-return p;
+
+function authMessage(message){
+ el("authMessage").textContent=message||"";
 }
+
+function showMode(mode){
+ const guest=mode==="guest";
+ el("phoneMode").classList.toggle("hidden",guest);
+ el("guestMode").classList.toggle("hidden",!guest);
+ el("phoneTab").classList.toggle("active",!guest);
+ el("guestTab").classList.toggle("active",guest);
+ authMessage("");
+}
+
+function normalizePhone(value){
+ const fa="۰۱۲۳۴۵۶۷۸۹";
+ const ar="٠١٢٣٤٥٦٧٨٩";
+ let phone=String(value||"").trim();
+
+ phone=phone
+  .replace(/[۰-۹]/g,d=>String(fa.indexOf(d)))
+  .replace(/[٠-٩]/g,d=>String(ar.indexOf(d)))
+  .replace(/[\s()-]/g,"");
+
+ if(phone.startsWith("00")) phone="+"+phone.slice(2);
+ return phone;
+}
+
 async function ensureAuth(){
-try{let x=await account.get();userId=x.$id;return x}
-catch(e){userId=null;return null}
+ try{
+  const info=await account.get();
+  userId=info.$id;
+  return info;
+ }catch(error){
+  userId=null;
+  return null;
+ }
 }
+
 function revealApp(){
-let error=validateProfile();
-if(error){$("welcome").classList.remove("hidden");$("app").classList.add("hidden");authMessage(error);return}
-saveProfile();showProfileSummary();
-$("welcome").classList.add("hidden");$("app").classList.remove("hidden");
-say("اتصال برقرار شد. خوش آمدی.");
-loadPublicRooms();
-if(lobbyTimer)clearInterval(lobbyTimer);
-lobbyTimer=setInterval(loadPublicRooms,15000);
+ el("welcome").classList.add("hidden");
+ el("app").classList.remove("hidden");
+
+ say("اتصال برقرار شد. خوش آمدی.");
+
+ loadPublicRooms();
+
+ if(lobbyTimer) clearInterval(lobbyTimer);
+ lobbyTimer=setInterval(loadPublicRooms,15000);
 }
+
 async function startPhoneLogin(){
-let error=validateProfile();if(error)return authMessage(error);
-saveProfile();
-let phone=normalizePhone($("phoneNumber").value),b=$("sendCode");
-if(!/^\+[1-9]\d{7,14}$/.test(phone))return authMessage("شماره را همراه کد کشور وارد کن.");
-b.disabled=true;authMessage("در حال ارسال کد...");
-try{
-if(userId){try{await account.deleteSession("current")}catch(e){}userId=null}
-let t=await account.createPhoneToken({userId:Appwrite.ID.unique(),phone});
-pendingPhoneUserId=t.userId;$("otpArea").classList.add("show");authMessage("کد ارسال شد؛ پیامک را بررسی کن.");
-}catch(e){authMessage("ارسال پیامک ناموفق بود: "+e.message)}
-finally{b.disabled=false}
+ const button=el("sendCodeButton");
+ const name=getName();
+ const phone=normalizePhone(el("phoneNumber").value);
+
+ if(!name){
+  authMessage("ابتدا نام بازیکن را وارد کن.");
+  return;
+ }
+
+ if(!/^\+[1-9]\d{7,14}$/.test(phone)){
+  authMessage("شماره را همراه کد کشور وارد کن؛ مانند +989121234567.");
+  return;
+ }
+
+ button.disabled=true;
+ authMessage("در حال ارسال کد پیامکی...");
+
+ try{
+  if(userId){
+   try{
+    await account.deleteSession("current");
+   }catch(error){}
+   userId=null;
+  }
+
+  const token=await account.createPhoneToken({
+   userId:Appwrite.ID.unique(),
+   phone:phone
+  });
+
+  pendingPhoneUserId=token.userId;
+  el("otpArea").classList.add("show");
+  el("otpCode").focus();
+  authMessage("کد ارسال شد. پیامک را بررسی کن.");
+
+ }catch(error){
+  authMessage("ارسال پیامک انجام نشد: "+error.message);
+ }finally{
+  button.disabled=false;
+ }
 }
+
 async function verifyPhoneCode(){
-let c=$("otpCode").value.trim();
-if(!pendingPhoneUserId)return authMessage("ابتدا کد درخواست کن.");
-try{
-await account.createSession({userId:pendingPhoneUserId,secret:c});
-let x=await account.get();userId=x.$id;pendingPhoneUserId=null;revealApp();
-}catch(e){authMessage("کد نادرست یا منقضی است: "+e.message)}
+ const button=el("verifyCodeButton");
+ const code=el("otpCode").value.trim();
+
+ if(!pendingPhoneUserId){
+  authMessage("ابتدا درخواست ارسال کد را انجام بده.");
+  return;
+ }
+
+ if(!/^\d{4,8}$/.test(code)){
+  authMessage("کد تأیید را درست وارد کن.");
+  return;
+ }
+
+ button.disabled=true;
+ authMessage("در حال بررسی کد...");
+
+ try{
+  await account.createSession({
+   userId:pendingPhoneUserId,
+   secret:code
+  });
+
+  const info=await account.get();
+  userId=info.$id;
+  pendingPhoneUserId=null;
+  revealApp();
+
+ }catch(error){
+  authMessage("کد نادرست یا منقضی شده است: "+error.message);
+ }finally{
+  button.disabled=false;
+ }
 }
+
+function resetPhoneLogin(){
+ pendingPhoneUserId=null;
+ el("otpArea").classList.remove("show");
+ el("otpCode").value="";
+ authMessage("");
+}
+
 async function continueAsGuest(){
-let error=validateProfile();if(error)return authMessage(error);
-saveProfile();let b=$("guestButton");b.disabled=true;
-try{
-if(!userId){await account.createAnonymousSession();let x=await account.get();userId=x.$id}
-revealApp();
-}catch(e){authMessage("ورود مهمان ناموفق بود: "+e.message)}
-finally{b.disabled=false}
+ const button=el("guestButton");
+
+ if(!getName()){
+  authMessage("برای ورود مهمان، نام بازیکن را وارد کن.");
+  return;
+ }
+
+ button.disabled=true;
+ authMessage("در حال ورود مهمان...");
+
+ try{
+  if(!userId){
+   await account.createAnonymousSession();
+   const info=await account.get();
+   userId=info.$id;
+  }
+
+  revealApp();
+
+ }catch(error){
+  authMessage("ورود مهمان ناموفق بود: "+error.message);
+ }finally{
+  button.disabled=false;
+ }
 }
+
+/* توقف بروزرسانی اتاق */
+function stopRoomTimer(){
+ if(roomTimer){
+  clearInterval(roomTimer);
+  roomTimer=null;
+ }
+}
+
+/* ساخت اتاق */
 async function createRoom(){
-try{
-if(!userId)return say("ابتدا وارد بازی شو.");
-let error=validateProfile();if(error)return say(error);
-saveProfile();$("createButton").disabled=true;
-let code=makeCode(),max=Number($("maxPlayers").value),sc=$("scenario").value;
-await db.createRow({databaseId:CFG.database,tableId:CFG.rooms,rowId:Appwrite.ID.unique(),data:{roomcode:code,hostId:userId,status:"waiting",scenario:sc,assistantModeratorId:"",winner:"",maxplayers:max,currentphase:"lobby"}});
-currentHost=userId;currentMaxPlayers=max;currentScenario=sc;
-await enterRoom(code);
-}catch(e){say("خطا در ساخت اتاق: "+e.message)}
-finally{$("createButton").disabled=false}
+ const button=el("createButton");
+ let createdRoomId="";
+
+ try{
+  if(!userId) return say("ابتدا وارد بازی شو.");
+
+  const name=getName();
+  if(!name) return say("نام بازیکن را وارد کن.");
+
+  const max=Number(el("maxPlayers").value);
+  const scenario=el("scenario").value;
+
+  button.disabled=true;
+  say("در حال ساخت اتاق...");
+
+  const code=makeCode();
+
+  const room=await db.createRow({
+   databaseId:CFG.database,
+   tableId:CFG.rooms,
+   rowId:Appwrite.ID.unique(),
+   data:{
+    roomcode:code,
+    hostId:userId,
+    status:"waiting",
+    scenario:scenario,
+    assistantModeratorId:"",
+    winner:"",
+    maxplayers:max,
+    currentphase:"lobby"
+   }
+  });
+
+  createdRoomId=room.$id;
+  currentRoomRow=room.$id;
+  currentHost=userId;
+  currentMaxPlayers=max;
+  currentScenario=scenario;
+
+  await enterRoom(code,name);
+
+  await loadPublicRooms();
+
+ }catch(error){
+  say("خطا در ساخت اتاق:\n"+error.message);
+
+  if(createdRoomId){
+   try{
+    await db.deleteRow({
+     databaseId:CFG.database,
+     tableId:CFG.rooms,
+     rowId:createdRoomId
+    });
+   }catch(cleanupError){}
+  }
+
+ }finally{
+  button.disabled=false;
+ }
 }
+
+/* ورود با کد اتاق */
 async function joinRoom(){
-try{
-if(!userId)return say("ابتدا وارد بازی شو.");
-let error=validateProfile();if(error)return say(error);
-saveProfile();
-let code=$("roomCode").value.trim().toUpperCase();if(!code)return say("کد اتاق را وارد کن.");
-let r=await db.listRows({databaseId:CFG.database,tableId:CFG.rooms,queries:[Appwrite.Query.equal("roomcode",code),Appwrite.Query.limit(1)]});
-let room=r.rows[0];if(!room)return say("اتاق پیدا نشد.");
-if(room.status!=="waiting"||room.currentphase!=="lobby")return say("این اتاق در حال بازی است.");
-currentHost=room.hostId;currentMaxPlayers=Number(room.maxplayers)||12;currentScenario=room.scenario||"classic";
-await enterRoom(code);
-}catch(e){say("خطا در ورود: "+e.message)}
-}
-async function enterRoom(code){
-try{
-await cleanupVoice();currentRoom=code;
-let ex=await db.listRows({databaseId:CFG.database,tableId:CFG.players,queries:[Appwrite.Query.equal("roomcode",code),Appwrite.Query.equal("UserId",userId),Appwrite.Query.limit(1)]});
-let mine=ex.rows[0];
-if(mine){myPlayerRow=mine.$id;ready=!!mine.isReady}
-else{
-let all=await db.listRows({databaseId:CFG.database,tableId:CFG.players,queries:[Appwrite.Query.equal("roomcode",code),Appwrite.Query.limit(100)]});
-if(all.rows.length>=currentMaxPlayers){currentRoom="";return say("ظرفیت اتاق تکمیل است.")}
-let p=await db.createRow({databaseId:CFG.database,tableId:CFG.players,rowId:Appwrite.ID.unique(),data:{roomcode:code,PlayerName:getDisplayName(),UserId:userId,isReady:false,isAlive:true,isSilenced:false,canVote:true,hasSpoken:false,isModerator:false}});
-myPlayerRow=p.$id;ready=false;
-}
-$("entry").classList.add("hidden");$("publicLobby").classList.add("hidden");$("game").classList.remove("hidden");
-$("roomLabel").textContent=code;$("roomDetails").textContent="ظرفیت: "+currentMaxPlayers+" | سناریو: "+scenarioName(currentScenario);
-$("chatlog").innerHTML="";updateReadyButton();
-await refreshPlayers();await loadChat();
-playersSub=realtime.subscribe(Appwrite.Channel.tablesdb(CFG.database).table(CFG.players).row(),e=>{if(e.payload?.roomcode===currentRoom)refreshPlayers()});
-msgSub=realtime.subscribe(Appwrite.Channel.tablesdb(CFG.database).table(CFG.messages).row(),e=>{if(e.payload?.roomcode===currentRoom)handleMessage(e.payload)});
-await sendSignal("peer-hello",{userId});
-$("voiceStatus").textContent="برای فعال‌کردن صدا، دکمه صحبت را نگه دار.";
-say("وارد لابی شدی.");
-}catch(e){say("خطا در ورود به لابی: "+e.message)}
-}
-function updateReadyButton(){$("readyButton").textContent=ready?"لغو آمادگی":"آماده‌ام"}
-async function setReady(){
-try{
-let v=!ready;
-await db.updateRow({databaseId:CFG.database,tableId:CFG.players,rowId:myPlayerRow,data:{isReady:v}});
-ready=v;updateReadyButton();await refreshPlayers();
-}catch(e){say("خطا در تغییر آمادگی: "+e.message)}
-}
-async function refreshPlayers(){
-if(!currentRoom)return;
-try{
-let r=await db.listRows({databaseId:CFG.database,tableId:CFG.players,queries:[Appwrite.Query.equal("roomcode",currentRoom),Appwrite.Query.limit(100)]});
-const rows=r.rows||[],host=rows.find(p=>p.UserId===currentHost),others=rows.filter(p=>p.UserId!==currentHost);
-const hostSlot=$("hostSlot");hostSlot.innerHTML="";
-const hostCard=document.createElement("div");hostCard.className="host-card";
-const crown=document.createElement("div");crown.className="host-crown";crown.textContent="👑";
-const avatar=document.createElement("div");avatar.className="host-avatar";
-const name=document.createElement("div");name.className="host-name";
-const info=document.createElement("div");
-if(host){
-const parts=String(host.PlayerName||"گرداننده").trim().split(/\s+/);
-avatar.textContent=parts.length>1?parts.shift():"👑";name.textContent=parts.join(" ")||"گرداننده";
-}else{avatar.textContent="👑";name.textContent=currentHost===userId?getDisplayName():"گرداننده"}
-info.append(name);
-const tag=document.createElement("div");tag.className="host-label";tag.textContent="GAME MASTER";info.append(tag);
-hostCard.append(crown,avatar,info);hostSlot.append(hostCard);
-const grid=$("players");grid.innerHTML="";
-others.forEach(p=>{
-const card=document.createElement("div");card.className="player-card";
-const av=document.createElement("div");av.className="player-avatar";
-const parts=String(p.PlayerName||"🎭 بازیکن").trim().split(/\s+/);
-av.textContent=parts.length>1?parts.shift():"🎭";
-const nm=document.createElement("div");nm.className="player-name";nm.textContent=parts.join(" ")||"بازیکن";
-const st=document.createElement("div");st.className="player-status "+(p.isReady?"player-ready":"player-waiting");st.textContent=p.isReady?"✓ آماده":"◷ در انتظار";
-card.append(av,nm,st);
-if(p.UserId===userId){const you=document.createElement("div");you.className="player-status";you.textContent="شما";card.append(you)}
-grid.append(card);
-});
-const emptyCount=Math.max(0,currentMaxPlayers-1-others.length);
-for(let i=0;i<emptyCount;i++){
-const slot=document.createElement("div");slot.className="empty-slot";
-const plus=document.createElement("div");plus.className="empty-plus";plus.textContent="+";
-const label=document.createElement("div");label.className="empty-label";label.textContent="جایگاه خالی";
-slot.append(plus,label);grid.append(slot);
-}
-$("playerCount").textContent="بازیکنان حاضر: "+rows.length+" / "+currentMaxPlayers;
-}catch(e){say("خطا در دریافت بازیکنان: "+e.message)}
+ const button=el("joinButton");
+
+ try{
+  if(!userId) return say("ابتدا وارد بازی شو.");
+
+  const name=getName();
+  const code=el("roomCode").value.trim().toUpperCase();
+
+  if(!name||!code){
+   return say("نام و کد اتاق را وارد کن.");
+  }
+
+  button.disabled=true;
+  say("در حال بررسی اتاق...");
+
+  const result=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.rooms,
+   queries:[
+    Appwrite.Query.equal("roomcode",code),
+    Appwrite.Query.limit(1)
+   ]
+  });
+
+  const room=result.rows[0];
+
+  if(!room) throw new Error("اتاقی با این کد پیدا نشد.");
+
+  if(room.status!=="waiting"||room.currentphase!=="lobby"){
+   throw new Error("این اتاق در حال بازی است.");
+  }
+
+  currentRoomRow=room.$id;
+  currentHost=room.hostId;
+  currentMaxPlayers=Number(room.maxplayers)||12;
+  currentScenario=room.scenario||"classic";
+
+  await enterRoom(code,name);
+
+ }catch(error){
+  say("خطا در ورود به اتاق:\n"+error.message);
+ }finally{
+  button.disabled=false;
+ }
 }
 
-/* پاک‌سازی اتاق‌های کاملاً خالی و نمایش اتاق‌های دارای گرداننده */
+/* ورود بازیکن به اتاق */
+async function enterRoom(code,name){
+ try{
+  currentRoom=code;
+
+  const existing=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.players,
+   queries:[
+    Appwrite.Query.equal("roomcode",code),
+    Appwrite.Query.equal("UserId",userId),
+    Appwrite.Query.limit(1)
+   ]
+  });
+
+  const mine=existing.rows[0];
+
+  if(mine){
+   myPlayerRow=mine.$id;
+   ready=!!mine.isReady;
+
+  }else{
+   const count=await db.listRows({
+    databaseId:CFG.database,
+    tableId:CFG.players,
+    queries:[
+     Appwrite.Query.equal("roomcode",code),
+     Appwrite.Query.limit(100)
+    ]
+   });
+
+   if(count.rows.length>=currentMaxPlayers){
+    currentRoom="";
+    throw new Error("ظرفیت اتاق تکمیل شده است.");
+   }
+
+   const created=await db.createRow({
+    databaseId:CFG.database,
+    tableId:CFG.players,
+    rowId:Appwrite.ID.unique(),
+    data:{
+     roomcode:code,
+     PlayerName:name,
+     UserId:userId,
+     isReady:false,
+     isAlive:true,
+     isSilenced:false,
+     canVote:true,
+     hasSpoken:false,
+     isModerator:false
+    }
+   });
+
+   myPlayerRow=created.$id;
+   ready=false;
+  }
+
+  el("entry").classList.add("hidden");
+  el("publicLobby").classList.add("hidden");
+  el("game").classList.remove("hidden");
+
+  el("roomLabel").textContent=code;
+  el("capacityLabel").textContent="ظرفیت اتاق: "+currentMaxPlayers+" بازیکن";
+  el("scenarioLabel").textContent="سناریو: "+scenarioName(currentScenario);
+
+  el("hostLabel").textContent=
+   currentHost===userId
+   ?"شما میزبان اصلی اتاق هستید."
+   :"شما بازیکن این اتاق هستید.";
+
+  updateReadyButton();
+  await refreshPlayers();
+
+  stopRoomTimer();
+  roomTimer=setInterval(refreshPlayers,5000);
+
+  say("با موفقیت وارد اتاق شدی.");
+
+ }catch(error){
+  say("خطا در ورود به اتاق:\n"+error.message);
+  throw error;
+ }
+}
+
+/* دریافت اتاق‌های عمومی */
 async function loadPublicRooms(){
-if(!userId||loadingRooms||!$("publicRooms"))return;
-loadingRooms=true;
-try{
-const result=await db.listRows({
-databaseId:CFG.database,tableId:CFG.rooms,
-queries:[
-Appwrite.Query.equal("status","waiting"),
-Appwrite.Query.equal("currentphase","lobby"),
-Appwrite.Query.limit(100)
-]
-});
-const box=$("publicRooms");box.innerHTML="";
-let visibleCount=0;
-for(const room of result.rows||[]){
-if(!room.roomcode||!room.hostId)continue;
-const playersResult=await db.listRows({
-databaseId:CFG.database,tableId:CFG.players,
-queries:[Appwrite.Query.equal("roomcode",room.roomcode),Appwrite.Query.limit(100)]
-});
-const players=playersResult.rows||[];
-if(players.length===0){
-try{
-await db.deleteRow({databaseId:CFG.database,tableId:CFG.rooms,rowId:room.$id});
-}catch(deleteError){
-console.warn("پاک‌سازی اتاق ناموفق بود:",room.roomcode,deleteError);
-}
-continue;
-}
-const hostPresent=players.some(p=>p.UserId===room.hostId);
-if(!hostPresent)continue;
-const maxPlayers=Number(room.maxplayers)||12;
-const full=players.length>=maxPlayers;
-const card=document.createElement("div");card.className="room-card";
-const title=document.createElement("h4");title.textContent="اتاق "+room.roomcode;
-const info=document.createElement("div");info.className="room-info";
-info.textContent="بازیکنان: "+players.length+" از "+maxPlayers+" | "+scenarioName(room.scenario);
-const button=document.createElement("button");
-button.textContent=full?"ظرفیت تکمیل":"ورود به اتاق";button.disabled=full;
-button.onclick=()=>{$("roomCode").value=room.roomcode;joinRoom()};
-card.append(title,info,button);box.appendChild(card);visibleCount++;
-}
-if(visibleCount===0)box.textContent="فعلاً اتاق فعالی وجود ندارد.";
-}catch(error){
-console.error(error);
-$("publicRooms").textContent="خطا در دریافت یا پاک‌سازی اتاق‌ها: "+error.message;
-}finally{loadingRooms=false}
+ if(!userId||loadingRooms) return;
+
+ loadingRooms=true;
+
+ const box=el("publicRooms");
+ const button=el("refreshRoomsButton");
+ button.disabled=true;
+
+ try{
+  const result=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.rooms,
+   queries:[
+    Appwrite.Query.equal("status","waiting"),
+    Appwrite.Query.equal("currentphase","lobby"),
+    Appwrite.Query.limit(50)
+   ]
+  });
+
+  box.innerHTML="";
+
+  if(!result.rows.length){
+   box.innerHTML='<div class="empty-rooms">فعلاً اتاق عمومی فعالی نیست. اولین اتاق را بساز!</div>';
+   return;
+  }
+
+  for(const room of result.rows){
+   if(!room.roomcode) continue;
+
+   let players=[];
+
+   try{
+    const playerResult=await db.listRows({
+     databaseId:CFG.database,
+     tableId:CFG.players,
+     queries:[
+      Appwrite.Query.equal("roomcode",room.roomcode),
+      Appwrite.Query.limit(100)
+     ]
+    });
+
+    players=playerResult.rows||[];
+
+   }catch(error){
+    const errorCard=document.createElement("div");
+    errorCard.className="room-card";
+    errorCard.textContent="خطا در دریافت بازیکنان اتاق "+room.roomcode+": "+error.message;
+    box.appendChild(errorCard);
+    continue;
+   }
+
+   const max=Number(room.maxplayers)||12;
+   const full=players.length>=max;
+   const host=players.find(p=>p.UserId===room.hostId);
+
+   const card=document.createElement("div");
+   card.className="room-card";
+
+   const title=document.createElement("h4");
+   title.textContent="🎮 اتاق "+room.roomcode;
+
+   const info=document.createElement("div");
+   info.className="room-info";
+
+   const lines=[
+    "👑 میزبان: "+(host?host.PlayerName:"میزبان"),
+    "👥 بازیکنان: "+players.length+" از "+max,
+    "🎭 سناریو: "+scenarioName(room.scenario)
+   ];
+
+   lines.forEach(line=>{
+    const div=document.createElement("div");
+    div.textContent=line;
+    info.appendChild(div);
+   });
+
+   const status=document.createElement("div");
+   status.className="room-status"+(full?" full":"");
+   status.textContent=full
+    ?"● ظرفیت اتاق تکمیل است"
+    :"● در انتظار بازیکن";
+
+   info.appendChild(status);
+
+   const join=document.createElement("button");
+   join.textContent=full?"ظرفیت تکمیل است":"ورود به اتاق";
+   join.disabled=full;
+
+   join.onclick=async()=>{
+    if(!getName()){
+     say("ابتدا نام بازیکن را وارد کن.");
+     el("welcomeName").focus();
+     return;
+    }
+
+    el("roomCode").value=room.roomcode;
+    await joinRoom();
+   };
+
+   card.append(title,info,join);
+   box.appendChild(card);
+  }
+
+  if(!box.children.length){
+   box.innerHTML='<div class="empty-rooms">اتاق قابل نمایش پیدا نشد.</div>';
+  }
+
+ }catch(error){
+  box.innerHTML="";
+
+  const div=document.createElement("div");
+  div.className="empty-rooms";
+  div.textContent="خطا در دریافت اتاق‌ها: "+error.message;
+
+  box.appendChild(div);
+
+  say("خطا در دریافت لابی عمومی:\n"+error.message);
+
+ }finally{
+  loadingRooms=false;
+  button.disabled=false;
+ }
 }
 
+/* وضعیت آمادگی */
+function updateReadyButton(){
+ el("readyButton").textContent=ready?"لغو آمادگی":"آماده‌ام";
+}
+
+async function refreshPlayers(){
+ if(!currentRoom) return;
+
+ try{
+  const result=await db.listRows({
+   databaseId:CFG.database,
+   tableId:CFG.players,
+   queries:[
+    Appwrite.Query.equal("roomcode",currentRoom),
+    Appwrite.Query.limit(100)
+   ]
+  });
+
+  const ul=el("players");
+  ul.innerHTML="";
+
+  result.rows.forEach(player=>{
+   const li=document.createElement("li");
+
+   li.textContent=
+    player.PlayerName+
+    (player.isReady?" — آماده":" — در انتظار")+
+    (player.UserId===currentHost?" — میزبان":"");
+
+   ul.appendChild(li);
+  });
+
+  if(!result.rows.length){
+   ul.innerHTML="<li>هنوز بازیکنی وارد نشده است.</li>";
+  }
+
+ }catch(error){
+  say("خطا در دریافت بازیکنان: "+error.message);
+ }
+}
+
+/* تغییر آمادگی */
+async function setReady(){
+ try{
+  if(!myPlayerRow){
+   say("بازیکن پیدا نشد.");
+   return;
+  }
+
+  const value=!ready;
+
+  await db.updateRow({
+   databaseId:CFG.database,
+   tableId:CFG.players,
+   rowId:myPlayerRow,
+   data:{isReady:value}
+  });
+
+  ready=value;
+  updateReadyButton();
+
+  say(ready?"وضعیت شما: آماده":"آمادگی لغو شد");
+
+  await refreshPlayers();
+
+ }catch(error){
+  say("خطا در تغییر وضعیت: "+error.message);
+ }
+}
+
+/* خروج واقعی از اتاق و پاک کردن رکورد بازیکن */
 async function leaveRoom(){
-await cleanupVoice();
-for(let s of [playersSub,msgSub]){if(s){try{await s()}catch(e){}}}
-playersSub=msgSub=null;currentRoom="";myPlayerRow="";ready=false;
-$("game").classList.add("hidden");$("entry").classList.remove("hidden");$("publicLobby").classList.remove("hidden");
-loadPublicRooms();say("از اتاق خارج شدی.");
+ const leavingRoom=currentRoom;
+ const leavingRow=myPlayerRow;
+ const wasHost=currentHost===userId;
+
+ stopRoomTimer();
+
+ try{
+  if(leavingRow){
+   await db.deleteRow({
+    databaseId:CFG.database,
+    tableId:CFG.players,
+    rowId:leavingRow
+   });
+  }
+
+  if(leavingRoom){
+   const remaining=await db.listRows({
+    databaseId:CFG.database,
+    tableId:CFG.players,
+    queries:[
+     Appwrite.Query.equal("roomcode",leavingRoom),
+     Appwrite.Query.limit(100)
+    ]
+   });
+
+   const players=remaining.rows||[];
+
+   if(players.length===0){
+    if(currentRoomRow){
+     try{
+      await db.deleteRow({
+       databaseId:CFG.database,
+       tableId:CFG.rooms,
+       rowId:currentRoomRow
+      });
+     }catch(error){}
+    }
+
+   }else if(wasHost){
+    const newHost=players[0];
+
+    if(currentRoomRow){
+     try{
+      await db.updateRow({
+       databaseId:CFG.database,
+       tableId:CFG.rooms,
+       rowId:currentRoomRow,
+       data:{hostId:newHost.UserId}
+      });
+     }catch(error){}
+    }
+   }
+  }
+
+  currentRoom="";
+  currentRoomRow="";
+  currentHost="";
+  myPlayerRow="";
+  ready=false;
+
+  el("game").classList.add("hidden");
+  el("entry").classList.remove("hidden");
+  el("publicLobby").classList.remove("hidden");
+  el("players").innerHTML="";
+
+  say("از اتاق خارج شدی.");
+  await loadPublicRooms();
+
+ }catch(error){
+  say("خطا در خروج از اتاق: "+error.message);
+ }
 }
-async function createMessage(type,content,target=""){
-if(!currentRoom)return;
-return db.createRow({databaseId:CFG.database,tableId:CFG.messages,rowId:Appwrite.ID.unique(),data:{roomcode:currentRoom,userId,PlayerName:getDisplayName(),content:String(content).slice(0,4900),phase:"lobby",messageType:type,targetUserId:target,isRead:false}});
-}
-async function sendChat(){
-let input=$("chatInput"),v=input.value.trim();if(!v)return;
-try{await createMessage("text",v);input.value="";appendChat(getDisplayName(),v)}
-catch(e){say("ارسال پیام ناموفق بود: "+e.message)}
-}
-function appendChat(name,content){
-let box=$("chatlog"),d=document.createElement("div");d.className="chatmsg";
-let b=document.createElement("b");b.textContent=name+": ";
-d.append(b,document.createTextNode(content));box.appendChild(d);box.scrollTop=box.scrollHeight;
-}
-async function loadChat(){
-try{
-let r=await db.listRows({databaseId:CFG.database,tableId:CFG.messages,queries:[Appwrite.Query.equal("roomcode",currentRoom),Appwrite.Query.equal("phase","lobby"),Appwrite.Query.equal("messageType","text"),Appwrite.Query.limit(100)]});
-$("chatlog").innerHTML="";
-r.rows.sort((a,b)=>new Date(a.$createdAt)-new Date(b.$createdAt)).forEach(m=>appendChat(m.PlayerName,m.content));
-}catch(e){say("خواندن چت ناموفق بود: "+e.message)}
-}
-async function sendSignal(type,obj,target=""){
-try{await createMessage(type,JSON.stringify(obj),target)}catch(e){console.warn("signaling",e)}
-}
-function handleMessage(m){
-if(m.userId===userId)return;
-if(m.messageType==="text"){appendChat(m.PlayerName,m.content);return}
-if(!m.messageType.startsWith("rtc-")&& !["peer-hello","voice-state"].includes(m.messageType))return;
-let data;try{data=JSON.parse(m.content)}catch(e){return}
-if(m.targetUserId&&m.targetUserId!==userId)return;
-handleSignal(m.userId,m.messageType,data);
-}
-async function getPeer(id){
-let pc=peerConnections.get(id);if(pc)return pc;
-pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
-peerConnections.set(id,pc);
-if(localStream)localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
-pc.onicecandidate=e=>{if(e.candidate)sendSignal("rtc-ice",e.candidate.toJSON(),id)};
-pc.ontrack=e=>{
-let stream=e.streams[0];if(!stream)return;
-remoteStreams.set(id,stream);
-let audio=document.getElementById("audio-"+id);
-if(!audio){audio=document.createElement("audio");audio.id="audio-"+id;audio.autoplay=true;audio.playsInline=true;$("remoteAudios").appendChild(audio)}
-audio.srcObject=stream;audio.play().catch(()=>{});
-};
-pc.onconnectionstatechange=()=>{if(["failed","closed","disconnected"].includes(pc.connectionState))$("voiceStatus").textContent="ارتباط صوتی با یکی از بازیکنان قطع شد."};
-return pc;
-}
-async function handleSignal(from,type,data){
-try{
-let pc;
-if(type==="peer-hello"){
-if(userId.localeCompare(from)>0){pc=await getPeer(from);let offer=await pc.createOffer();await pc.setLocalDescription(offer);await sendSignal("rtc-offer",pc.localDescription.toJSON(),from)}
-return;
-}
-pc=await getPeer(from);
-if(type==="rtc-offer"){
-await pc.setRemoteDescription(data);
-let ans=await pc.createAnswer();await pc.setLocalDescription(ans);await sendSignal("rtc-answer",pc.localDescription.toJSON(),from);
-let q=queuedIce.get(from)||[];for(let c of q)await pc.addIceCandidate(c);queuedIce.delete(from);
-}else if(type==="rtc-answer"){
-await pc.setRemoteDescription(data);
-let q=queuedIce.get(from)||[];for(let c of q)await pc.addIceCandidate(c);queuedIce.delete(from);
-}else if(type==="rtc-ice"){
-if(pc.remoteDescription)await pc.addIceCandidate(data);
-else{let q=queuedIce.get(from)||[];q.push(data);queuedIce.set(from,q)}
-}
-}catch(e){console.warn("WebRTC signaling error",e);$("voiceStatus").textContent="خطای برقراری تماس؛ دوباره تلاش کن."}
-}
-async function startTalking(e){
-if(e)e.preventDefault();if(!currentRoom)return;
-if($("ptt").dataset.down==="1")return;
-$("ptt").dataset.down="1";$("ptt").classList.add("talking");$("ptt").textContent="در حال صحبت…";
-try{
-if(!localStream){
-localStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-localStream.getAudioTracks().forEach(t=>t.enabled=true);
-for(let [id,pc] of peerConnections){
-if(!pc.getSenders().some(s=>s.track?.kind==="audio")){
-localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
-let offer=await pc.createOffer();await pc.setLocalDescription(offer);await sendSignal("rtc-offer",pc.localDescription.toJSON(),id);
-}
-}
-}
-localStream.getAudioTracks().forEach(t=>t.enabled=true);
-$("voiceStatus").textContent="میکروفون روشن است؛ برای قطع صدا دکمه را رها کن.";
-}catch(err){
-$("voiceStatus").textContent="دسترسی به میکروفون ممکن نشد: "+err.message;
-$("ptt").dataset.down="0";$("ptt").classList.remove("talking");$("ptt").textContent="نگه دار و صحبت کن";
-}
-}
-function stopTalking(e){
-if(e)e.preventDefault();
-$("ptt").dataset.down="0";$("ptt").classList.remove("talking");$("ptt").textContent="نگه دار و صحبت کن";
-if(localStream)localStream.getAudioTracks().forEach(t=>t.enabled=false);
-if(currentRoom)$("voiceStatus").textContent="میکروفون بی‌صداست.";
-}
-async function cleanupVoice(){
-stopTalking();
-for(let pc of peerConnections.values())pc.close();
-peerConnections.clear();remoteStreams.clear();queuedIce.clear();
-if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}
-$("remoteAudios").innerHTML="";
-}
-$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat()});
-$("playerAvatar").addEventListener("change",updateAvatarPreview);
-document.addEventListener("visibilitychange",()=>{if(document.hidden)stopTalking()});
-loadProfile();
+
+/* شروع اولیه برنامه */
 (async()=>{
-let x=await ensureAuth();
-if(x){
-let error=validateProfile();
-if(!error)revealApp();
-else{$("welcome").classList.remove("hidden");$("app").classList.add("hidden");authMessage("لطفاً پروفایل خود را کامل کن.")}
-}
+ const info=await ensureAuth();
+
+ if(info){
+  revealApp();
+ }
 })();
 </script>
 </body>
