@@ -1,705 +1,609 @@
+import {
+  Client,
+  Account,
+  TablesDB,
+  Query,
+  ID
+} from 'node-appwrite';
 
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<meta name="theme-color" content="#09090d">
-<title>MAFIA MAN VIP</title>
-<script src="https://cdn.jsdelivr.net/npm/appwrite@29.0.0"></script>
-<style>
-:root{--bg:#09090d;--panel:#17161d;--gold:#d5ad58;--gold2:#f2d58a;--muted:#92919b;--line:rgba(213,173,88,.25);--green:#37bd85;--red:#d94b57}
-*{box-sizing:border-box}
-body{margin:0;background:radial-gradient(circle at top,#28212b,#0b0b10 55%,#07070a);color:#f6f1e7;font-family:Tahoma,Arial;min-height:100vh}
-button,input,select{font:inherit}
-button{cursor:pointer}
-.hidden{display:none!important}
-.wrap{width:min(100%,850px);margin:auto;padding:18px 14px 40px}
-.brand{text-align:center;margin:12px 0 24px}
-.logo{width:66px;height:66px;border:1px solid var(--gold);border-radius:20px;display:grid;place-items:center;margin:auto auto 10px;color:var(--gold2);font-size:30px;box-shadow:0 0 28px #d5ad5822}
-.brand h1{margin:0;color:var(--gold2);font-size:25px;letter-spacing:2px}
-.brand p{color:var(--muted);font-size:11px;letter-spacing:3px}
-.panel{background:linear-gradient(145deg,#201e27,#111117);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:15px;box-shadow:0 14px 40px #0005}
-h2{font-size:17px;color:var(--gold2);margin:0 0 14px}
-h3{font-size:14px;color:var(--gold2);margin:0 0 12px}
-.sub{color:var(--muted);font-size:12px;line-height:1.9}
-.field{margin:12px 0}
-label{display:block;color:#c7c2b7;font-size:12px;margin-bottom:7px}
-input,select{width:100%;background:#0d0d13;border:1px solid #393640;border-radius:12px;color:#fff;padding:13px;outline:none}
-input:focus,select:focus{border-color:var(--gold)}
-.btn{border:1px solid var(--line);border-radius:12px;padding:12px 15px;color:#f8f0dc;background:linear-gradient(135deg,#28242a,#17161c);font-weight:bold}
-.btn.gold{background:linear-gradient(135deg,#f0d38b,#b88b38);color:#21180a;border:0}
-.btn.red{border-color:#d94b5766;color:#ffb9be}
-.btn.green{border-color:#37bd8566;color:#9cf0c9}
-.btn.block{width:100%}
-.btn:disabled{opacity:.45}
-.btnrow{display:flex;gap:9px;flex-wrap:wrap}
-.btnrow>*{flex:1}
-.divider{height:1px;background:var(--line);margin:17px 0}
-.status{font-size:12px;color:var(--muted);min-height:20px;margin-top:10px;line-height:1.8}
-.status.error{color:#ff929b}.status.ok{color:#86e5b7}
-.room-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.room-code{font-size:13px;color:var(--gold2);letter-spacing:2px}
-.room-stats{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
-.stat{flex:1;min-width:90px;text-align:center;background:#101016;border:1px solid #302d35;border-radius:12px;padding:11px 6px}
-.stat b{display:block;color:var(--gold2);font-size:19px}.stat span{font-size:10px;color:var(--muted)}
-.host-card{background:linear-gradient(145deg,#d5ad5828,#1a181e);border:1px solid #d5ad5877;border-radius:18px;padding:17px;text-align:center;margin:16px 0}
-.host-crown{font-size:25px}.host-avatar,.avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#423627,#17151a);border:1px solid var(--gold);color:var(--gold2);font-size:19px;margin:auto}
-.host-name{font-size:15px;color:var(--gold2);font-weight:bold;margin-top:8px}
-.host-label{font-size:10px;color:var(--muted);margin-top:5px}
-.players-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-.player-slot{min-height:116px;background:linear-gradient(145deg,#191820,#101016);border:1px solid #34313b;border-radius:15px;padding:12px 6px;text-align:center;position:relative}
-.player-slot.me{border-color:var(--gold);box-shadow:inset 0 0 18px #d5ad5814}
-.player-slot.empty{border-style:dashed;opacity:.5}
-.player-slot .avatar{width:40px;height:40px;font-size:16px}
-.player-name{font-size:11px;margin-top:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.player-meta{font-size:9px;color:var(--muted);margin-top:5px}
-.ready-tag{font-size:9px;color:var(--green);margin-top:5px}
-.not-ready{font-size:9px;color:#d5a85d;margin-top:5px}
-.host-tag{position:absolute;top:5px;left:5px;font-size:9px;color:var(--gold2)}
-.room-list{display:grid;gap:9px}
-.room-item{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#101016;border:1px solid #34313b;border-radius:13px;padding:12px}
-.room-item strong{color:var(--gold2);font-size:13px}.room-item small{display:block;color:var(--muted);margin-top:5px}
-.chat-box{height:230px;overflow-y:auto;background:#0b0b10;border:1px solid #302d35;border-radius:13px;padding:10px}
-.chat-line{font-size:12px;line-height:1.8;margin:7px 0;overflow-wrap:anywhere}
-.chat-line b{color:var(--gold2)}.chat-line .time{font-size:9px;color:#777;margin-right:5px}
-.chat-send{display:flex;gap:7px;margin-top:9px}.chat-send input{min-width:0}
-.voice-row{display:flex;gap:10px;align-items:center;justify-content:space-between;background:#101016;border:1px solid #34313b;border-radius:13px;padding:12px}
-.ptt{min-width:130px;min-height:54px;border:1px solid var(--gold);background:linear-gradient(135deg,#302719,#17140f);color:var(--gold2);border-radius:14px;font-weight:bold;touch-action:none;user-select:none}
-.ptt.active{background:#7a252d;color:white;border-color:#e65c67}
-.footer{text-align:center;color:#777;font-size:10px;margin-top:20px}
-@media(max-width:420px){.players-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:14px}}
-</style>
-</head>
-<body>
-<div class="wrap">
-<header class="brand">
- <div class="logo">♛</div>
- <h1>MAFIA MAN</h1>
- <p>VIP MAFIA CLUB</p>
-</header>
+// ===============================
+// APPWRITE CONFIG
+// ===============================
 
-<section id="loginScreen">
- <div class="panel">
-  <h2>ورود به انجمن مافیا</h2>
-  <p class="sub">برای ورود به لابی نام نمایشی خود را وارد کن.</p>
-  <div class="field"><label>نام بازیکن</label><input id="nameInput" maxlength="50" placeholder="نام خود را وارد کنید"></div>
-  <div class="field"><label>سن</label><input id="ageInput" type="number" min="13" max="99" placeholder="سن"></div>
-  <div class="field">
-   <label>جنسیت</label>
-   <select id="genderInput"><option value="">انتخاب کنید</option><option>آقا</option><option>خانم</option><option>سایر</option></select>
-  </div>
-  <button class="btn gold block" id="guestButton" onclick="continueAsGuest()">ورود به عنوان مهمان</button>
-  <div class="divider"></div>
-  <h3>ورود با شماره موبایل</h3>
-  <div class="field"><label>شماره با کد کشور</label><input id="phoneInput" type="tel" placeholder="+98912xxxxxxx" dir="ltr"></div>
-  <button class="btn block" id="sendCodeButton" onclick="startPhoneLogin()">ارسال کد تأیید</button>
-  <div id="verifyArea" class="hidden">
-   <div class="field"><label>کد پیامک‌شده</label><input id="otpInput" inputmode="numeric" placeholder="کد تأیید" dir="ltr"></div>
-   <button class="btn gold block" id="verifyCodeButton" onclick="verifyPhoneCode()">تأیید و ورود</button>
-  </div>
-  <div id="loginStatus" class="status"></div>
- </div>
-</section>
+const ENDPOINT = process.env.APPWRITE_ENDPOINT;
+const PROJECT_ID = process.env.APPWRITE_PROJECT_ID;
+const DATABASE_ID = '6b07af6f000798319ab0';
+const API_KEY = process.env.APPWRITE_API_KEY;
 
-<section id="lobbyScreen" class="hidden">
- <div class="panel">
-  <div class="room-top">
-   <div><h2>خوش آمدی، <span id="welcomeName"></span></h2><div class="sub">به انجمن اختصاصی مافیا خوش آمدی</div></div>
-   <button class="btn red" onclick="logout()">خروج</button>
-  </div>
- </div>
- <div class="panel">
-  <h2>ساخت اتاق VIP</h2>
-  <div class="field"><label>ظرفیت اتاق</label>
-   <select id="maxPlayersInput"><option value="6">۶ بازیکن</option><option value="8">۸ بازیکن</option><option value="10" selected>۱۰ بازیکن</option><option value="12">۱۲ بازیکن</option><option value="15">۱۵ بازیکن</option></select>
-  </div>
-  <div class="field"><label>سناریو</label>
-   <select id="scenarioInput"><option value="classic">کلاسیک</option><option value="professional">حرفه‌ای</option><option value="custom">اختصاصی</option></select>
-  </div>
-  <button class="btn gold block" id="createRoomButton" onclick="createRoom()">＋ ساخت اتاق جدید</button>
-  <div id="createStatus" class="status"></div>
- </div>
- <div class="panel">
-  <h2>ورود با کد اتاق</h2>
-  <div class="field"><input id="roomCodeInput" maxlength="20" placeholder="کد اتاق" dir="ltr"></div>
-  <button class="btn block" onclick="joinRoomByCode()">ورود به اتاق</button>
-  <div id="joinStatus" class="status"></div>
- </div>
- <div class="panel">
-  <div class="room-top"><h2>اتاق‌های عمومی</h2><button class="btn" onclick="loadPublicRooms()">بروزرسانی</button></div>
-  <div id="publicRooms" class="room-list"><div class="sub">در حال دریافت اتاق‌ها...</div></div>
- </div>
-</section>
-
-<section id="roomScreen" class="hidden">
- <div class="panel">
-  <div class="room-top">
-   <div><div class="sub">اتاق اختصاصی</div><div class="room-code">ROOM: <span id="roomCodeLabel"></span></div></div>
-   <button class="btn red" onclick="leaveRoom()">خروج از اتاق</button>
-  </div>
-  <div class="room-stats">
-   <div class="stat"><b id="playerCount">0</b><span>بازیکنان</span></div>
-   <div class="stat"><b id="capacityCount">10</b><span>ظرفیت</span></div>
-   <div class="stat"><b id="roomStatus">آماده</b><span>وضعیت اتاق</span></div>
-  </div>
- </div>
- <div class="panel">
-  <h2>جایگاه گرداننده</h2>
-  <div class="host-card">
-   <div class="host-crown">♛</div><div class="host-avatar" id="hostAvatar">♛</div>
-   <div class="host-name" id="hostName">در انتظار گرداننده</div>
-   <div class="host-label">میزبان و گرداننده اتاق</div>
-  </div>
-  <h2>جایگاه بازیکنان</h2>
-  <div id="playersGrid" class="players-grid"></div>
-  <div class="divider"></div>
-  <div class="btnrow">
-   <button class="btn green" id="readyButton" onclick="toggleReady()">اعلام آمادگی</button>
-   <button class="btn gold hidden" id="startGameButton" onclick="startGame()">شروع بازی</button>
-  </div>
-  <div id="roomStatusText" class="status"></div>
- </div>
- <div class="panel">
-  <h2>گفت‌وگوی بازیکنان</h2>
-  <div id="chatBox" class="chat-box"></div>
-  <div class="chat-send"><input id="chatInput" maxlength="1000" placeholder="پیام خود را بنویسید..."><button class="btn gold" onclick="sendChat()">ارسال</button></div>
- </div>
- <div class="panel">
-  <h2>ارتباط صوتی اتاق</h2>
-  <div class="voice-row">
-   <div><strong style="font-size:12px">فشار بده و صحبت کن</strong><div id="voiceStatus" class="sub">برای فعال‌سازی میکروفون دکمه را نگه دار</div></div>
-   <button class="ptt" id="pttButton">🎙 نگه دار و صحبت کن</button>
-  </div>
-  <p class="sub">میکروفون به اجازه مرورگر نیاز دارد. برای اتصال پایدار در بعضی شبکه‌ها TURN لازم است.</p>
- </div>
-</section>
-<div class="footer">MAFIA MAN VIP • PRIVATE MAFIA CLUB</div>
-</div>
-
-<script>
-'use strict';
-
-const CFG={
- endpoint:'https://fra.cloud.appwrite.io/v1',
- projectId:'6b07ab18000a7a4b0bcc',
- databaseId:'6b07af6f000798319ab0',
- rooms:'6b07af9d00191c9f315e',
- players:'6b07b22000258b36e472',
- messages:'6b07b4dd003d807c28e1'
+const TABLES = {
+  rooms: '6b07af9d00191c9f315e',
+  players: '6b07b22000258b36e472',
+  roles: '6b07b38700091cb0fcbe'
 };
 
-const {Client,Account,TablesDB,ID,Query}=Appwrite;
-const client=new Client().setEndpoint(CFG.endpoint).setProject(CFG.projectId);
-const account=new Account(client);
-const db=new TablesDB(client);
+// ===============================
+// RESPONSE
+// ===============================
 
-let userId='',playerName='',currentRoom='',myPlayerRow='',currentHost='';
-let currentMaxPlayers=10,myReady=false,loadingRoom=false,loadingPublic=false;
-let phoneUserId='',phoneTokenId='';
-let roomTimer=null,publicTimer=null,chatTimer=null,signalTimer=null,peerTimer=null;
-let localStream=null,peers=new Map(),pendingCandidates=new Map();
-let processedSignals=new Set(),sendingChat=false;
-
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-function setStatus(id,msg,type=''){
- const el=$(id);if(!el)return;
- el.textContent=msg||'';el.className='status '+type;
-}
-function screen(name){
- $('loginScreen').classList.toggle('hidden',name!=='login');
- $('lobbyScreen').classList.toggle('hidden',name!=='lobby');
- $('roomScreen').classList.toggle('hidden',name!=='room');
-}
-function busy(id,on,text){
- const b=$(id);if(!b)return;b.disabled=on;if(text)b.textContent=on?'در حال انجام...':text;
-}
-function host(){return !!userId&&currentHost===userId}
-function code(){return Math.random().toString(36).slice(2,8).toUpperCase()}
-function saveProfile(){
- try{localStorage.setItem('mm_profile',JSON.stringify({name:playerName}))}catch(e){}
-}
-function readProfile(){
- try{const p=JSON.parse(localStorage.getItem('mm_profile')||'{}');if(p.name)$('nameInput').value=p.name}catch(e){}
+function send(res, code, data) {
+  return res.json(data, code);
 }
 
-async function authGet(){
- try{return await account.get()}catch(e){return null}
-}
-async function profileCheck(){
- const n=$('nameInput').value.trim(),age=Number($('ageInput').value);
- if(!n){setStatus('loginStatus','نام بازیکن را وارد کن.','error');return false}
- if(age&&(age<13||age>99)){setStatus('loginStatus','سن معتبر نیست.','error');return false}
- playerName=n.slice(0,50);saveProfile();return true;
-}
-async function continueAsGuest(){
- if(!await profileCheck())return;
- busy('guestButton',true,'ورود به عنوان مهمان');
- try{
-  let u=await authGet();
-  if(!u){await account.createAnonymousSession();u=await account.get()}
-  userId=u.$id;
-  await afterLogin();
- }catch(e){setStatus('loginStatus','ورود مهمان ناموفق: '+e.message,'error')}
- finally{busy('guestButton',false,'ورود به عنوان مهمان')}
-}
-async function startPhoneLogin(){
- if(!await profileCheck())return;
- const phone=$('phoneInput').value.trim();
- if(!/^\+[1-9]\d{7,14}$/.test(phone)){setStatus('loginStatus','شماره را با کد کشور وارد کن.','error');return}
- busy('sendCodeButton',true,'ارسال کد تأیید');
- try{
-  const u=await authGet();
-  phoneUserId=u?.$id||ID.unique();
-  const token=await account.createPhoneToken(phoneUserId,phone);
-  phoneUserId=token.userId||phoneUserId;
-  phoneTokenId=token.$id;
-  $('verifyArea').classList.remove('hidden');
-  setStatus('loginStatus','کد تأیید ارسال شد.','ok');
- }catch(e){setStatus('loginStatus','ارسال کد ناموفق: '+e.message,'error')}
- finally{busy('sendCodeButton',false,'ارسال کد تأیید')}
-}
-async function verifyPhoneCode(){
- const secret=$('otpInput').value.trim();
- if(!phoneUserId||!phoneTokenId||!secret){setStatus('loginStatus','کد تأیید را وارد کن.','error');return}
- busy('verifyCodeButton',true,'تأیید و ورود');
- try{
-  await account.createSession(phoneUserId,secret);
-  const u=await account.get();userId=u.$id;
-  await afterLogin();
- }catch(e){setStatus('loginStatus','تأیید ناموفق: '+e.message,'error')}
- finally{busy('verifyCodeButton',false,'تأیید و ورود')}
-}
-async function afterLogin(){
- $('welcomeName').textContent=playerName;screen('lobby');
- await loadPublicRooms();startPublicPolling();
-}
-async function logout(){
- if(currentRoom)await leaveRoom(true);
- stopPublicPolling();
- try{await account.deleteSession('current')}catch(e){}
- userId='';playerName='';screen('login');
+// ===============================
+// JWT
+// ===============================
+
+function readJwt(req) {
+  const headers = req.headers || {};
+
+  return (
+    headers['x-appwrite-user-jwt'] ||
+    headers['X-Appwrite-User-JWT'] ||
+    ''
+  );
 }
 
-/* DATABASE */
-async function rows(table,queries=[]){
- const r=await db.listRows({databaseId:CFG.databaseId,tableId:table,queries:[...queries,Query.limit(100)]});
- return r.rows||[];
-}
-async function roomByCode(c){
- const r=await rows(CFG.rooms,[Query.equal('roomcode',c)]);
- return r[0]||null;
-}
-async function playersIn(c){return rows(CFG.players,[Query.equal('roomcode',c)])}
-async function mineIn(c){
- const r=await rows(CFG.players,[Query.equal('roomcode',c),Query.equal('UserId',userId)]);
- return r[0]||null;
-}
-async function deletePlayer(id){
- if(!id)return;
- try{await db.deleteRow({databaseId:CFG.databaseId,tableId:CFG.players,rowId:id})}catch(e){console.warn(e)}
-}
-async function updateRoom(id,data){
- return db.updateRow({databaseId:CFG.databaseId,tableId:CFG.rooms,rowId:id,data});
+// ===============================
+// RANDOM ROLE DISTRIBUTION
+// ===============================
+
+function shuffle(array) {
+  const result = [...array];
+
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [result[i], result[j]] =
+      [result[j], result[i]];
+  }
+
+  return result;
 }
 
-/* CREATE ROOM */
-async function createRoom(){
- if(!userId){setStatus('createStatus','ابتدا وارد شو.','error');return}
- busy('createRoomButton',true,'＋ ساخت اتاق جدید');
- let roomId='';
- try{
-  const c=code(),capacity=Number($('maxPlayersInput').value)||10;
-  const r=await db.createRow({
-   databaseId:CFG.databaseId,tableId:CFG.rooms,rowId:ID.unique(),
-   data:{
-    roomcode:c,hostId:userId,status:'waiting',maxplayers:capacity,
-    currentphase:'lobby',scenario:$('scenarioInput').value,
-    assistantModeratorId:'',isPaused:false,phaseDuration:60,
-    phaseStartedAt:'',winner:'',nightDuration:60,
-    discussionDuration:60,votingDuration:60,currentSpeakerId:''
-   }
+function makeRoleList(count, scenario = 'classic') {
+  const mafiaCount =
+    count >= 12 ? 4 :
+    count >= 9 ? 3 :
+    count >= 6 ? 2 : 1;
+
+  const roles = [];
+
+  for (let i = 0; i < mafiaCount; i++) {
+    roles.push('مافیا');
+  }
+
+  if (scenario === 'commando') {
+    roles.push('تکاور', 'پزشک');
+
+    if (count >= 6) {
+      roles.push('کارآگاه');
+    }
+
+  } else if (scenario === 'negotiation') {
+    roles.push('مذاکره‌کننده', 'پزشک');
+
+    if (count >= 6) {
+      roles.push('کارآگاه');
+    }
+
+  } else {
+    roles.push('پزشک');
+
+    if (count >= 5) {
+      roles.push('کارآگاه');
+    }
+  }
+
+  while (roles.length < count) {
+    roles.push('شهروند');
+  }
+
+  return shuffle(roles.slice(0, count));
+}
+
+// ===============================
+// APPWRITE CLIENT
+// ===============================
+
+async function createClients(jwt) {
+
+  const userClient = new Client()
+    .setEndpoint(ENDPOINT)
+    .setProject(PROJECT_ID)
+    .setJWT(jwt);
+
+  const account = new Account(userClient);
+
+  const user = await account.get();
+
+  const adminClient = new Client()
+    .setEndpoint(ENDPOINT)
+    .setProject(PROJECT_ID)
+    .setKey(API_KEY);
+
+  const tables = new TablesDB(adminClient);
+
+  return {
+    user,
+    tables
+  };
+}
+
+// ===============================
+// DATABASE FUNCTIONS
+// ===============================
+
+async function listRows(tables, tableId, queries = []) {
+
+  const result = await tables.listRows({
+    databaseId: DATABASE_ID,
+    tableId,
+    queries
   });
-  roomId=r.$id;
-  try{await enterRoom(c)}catch(e){
-   try{await db.deleteRow({databaseId:CFG.databaseId,tableId:CFG.rooms,rowId:roomId})}catch(_){}
-   throw e;
+
+  return result.rows || [];
+}
+
+async function updateRoom(tables, roomId, data) {
+
+  return tables.updateRow({
+    databaseId: DATABASE_ID,
+    tableId: TABLES.rooms,
+    rowId: roomId,
+    data
+  });
+}
+
+async function deleteRoles(tables, rows) {
+
+  for (const row of rows) {
+
+    await tables.deleteRow({
+      databaseId: DATABASE_ID,
+      tableId: TABLES.roles,
+      rowId: row.$id
+    });
+
   }
-  setStatus('createStatus','اتاق ساخته شد.','ok');
- }catch(e){setStatus('createStatus','خطا: '+e.message,'error')}
- finally{busy('createRoomButton',false,'＋ ساخت اتاق جدید')}
 }
 
-/* JOIN ROOM */
-async function joinRoomByCode(){
- const c=$('roomCodeInput').value.trim().toUpperCase();
- if(!c){setStatus('joinStatus','کد اتاق را وارد کن.','error');return}
- try{await enterRoom(c);setStatus('joinStatus','وارد اتاق شدی.','ok')}
- catch(e){setStatus('joinStatus','ورود ناموفق: '+e.message,'error')}
-}
-async function enterRoom(c){
- if(loadingRoom)throw new Error('درخواست ورود دیگری در حال انجام است.');
- loadingRoom=true;
- let newRowId='',createdHere=false,entered=false;
- try{
-  const room=await roomByCode(c);
-  if(!room)throw new Error('اتاق پیدا نشد.');
-  if(!['waiting','playing'].includes(room.status))throw new Error('اتاق در دسترس نیست.');
-  const all=await playersIn(c),existing=all.find(p=>p.UserId===userId);
-  const cap=Number(room.maxplayers)||10;
-  if(!existing&&all.length>=cap)throw new Error('ظرفیت اتاق تکمیل است.');
+// ===============================
+// MAIN FUNCTION
+// ===============================
 
-  let player=existing;
-  if(!player){
-   player=await db.createRow({
-    databaseId:CFG.databaseId,tableId:CFG.players,rowId:ID.unique(),
-    data:{
-     roomcode:c,PlayerName:playerName,UserId:userId,
-     isReady:false,isAlive:true,isSilenced:false,
-     canVote:true,hasSpoken:false,isModerator:false
+export default async ({ req, res, log, error }) => {
+
+  try {
+
+    // CONFIG CHECK
+
+    if (
+      !ENDPOINT ||
+      !PROJECT_ID ||
+      !API_KEY
+    ) {
+
+      return send(res, 500, {
+        ok: false,
+        error: 'تنظیمات Appwrite کامل نیست.'
+      });
+
     }
-   });
-   createdHere=true;newRowId=player.$id;
-  }else if(player.PlayerName!==playerName){
-   await db.updateRow({databaseId:CFG.databaseId,tableId:CFG.players,rowId:player.$id,data:{PlayerName:playerName}});
-  }
 
-  currentRoom=c;myPlayerRow=player.$id;currentHost=room.hostId;
-  currentMaxPlayers=cap;myReady=!!player.isReady;entered=true;
-  $('roomCodeLabel').textContent=c;screen('room');
-  await refreshRoom();await loadChat();
-  startRoomPolling();
-  await syncPeers();
- }catch(e){
-  if(createdHere&&newRowId)await deletePlayer(newRowId);
-  if(entered){
-   stopRoomPolling();closeVoice();
-   currentRoom='';myPlayerRow='';currentHost='';myReady=false;
-  }
-  screen('lobby');throw e;
- }finally{loadingRoom=false}
-}
+    // AUTH CHECK
 
-/* ROOM DISPLAY */
-async function refreshRoom(){
- if(!currentRoom)return;
- const room=await roomByCode(currentRoom);
- if(!room)throw new Error('اتاق حذف شده است.');
- currentHost=room.hostId;currentMaxPlayers=Number(room.maxplayers)||10;
- $('capacityCount').textContent=currentMaxPlayers;
- $('roomStatus').textContent=room.status==='playing'?'در حال بازی':'در انتظار';
- const all=await playersIn(currentRoom);
- $('playerCount').textContent=all.length;
- const h=all.find(p=>p.UserId===currentHost);
- $('hostName').textContent=h?.PlayerName||'گرداننده';
- $('hostAvatar').textContent=h?.PlayerName?.trim()?.charAt(0)||'♛';
+    const jwt = readJwt(req);
 
- const me=all.find(p=>p.UserId===userId);
- if(me){myPlayerRow=me.$id;myReady=!!me.isReady}
- $('readyButton').textContent=myReady?'لغو آمادگی':'اعلام آمادگی';
- $('readyButton').disabled=room.status!=='waiting';
- $('startGameButton').classList.toggle('hidden',!host());
- $('startGameButton').disabled=room.status!=='waiting'||all.length<2||!all.every(p=>p.isReady||p.UserId===currentHost);
+    if (!jwt) {
 
- const grid=$('playersGrid');grid.innerHTML='';
- all.filter(p=>p.UserId!==currentHost).forEach(p=>{
-  const d=document.createElement('div');
-  d.className='player-slot'+(p.UserId===userId?' me':'');
-  d.innerHTML=`
-   ${p.UserId===userId?'<span class="host-tag">شما</span>':''}
-   <div class="avatar">${esc((p.PlayerName||'?').charAt(0))}</div>
-   <div class="player-name">${esc(p.PlayerName||'بازیکن')}</div>
-   <div class="player-meta">${p.isAlive===false?'حذف‌شده':'بازیکن'}</div>
-   <div class="${p.isReady?'ready-tag':'not-ready'}">${p.isReady?'● آماده':'○ منتظر'}</div>`;
-  grid.appendChild(d);
- });
- for(let i=0;i<Math.max(0,currentMaxPlayers-all.length);i++){
-  const d=document.createElement('div');d.className='player-slot empty';
-  d.innerHTML='<div class="avatar">＋</div><div class="player-name">جایگاه خالی</div><div class="player-meta">منتظر بازیکن</div>';
-  grid.appendChild(d);
- }
- $('roomStatusText').textContent=host()?'شما گرداننده اتاق هستید.':'منتظر گرداننده باشید.';
-}
-async function toggleReady(){
- if(!myPlayerRow)return;
- try{
-  await db.updateRow({databaseId:CFG.databaseId,tableId:CFG.players,rowId:myPlayerRow,data:{isReady:!myReady}});
-  await refreshRoom();
- }catch(e){setStatus('roomStatusText','ثبت آمادگی ناموفق: '+e.message,'error')}
-}
-async function startGame(){
- if(!host())return;
- const all=await playersIn(currentRoom);
- if(all.length<2||!all.every(p=>p.isReady||p.UserId===currentHost)){
-  setStatus('roomStatusText','حداقل دو بازیکن و آمادگی همه لازم است.','error');return;
- }
- setStatus('roomStatusText','لابی آماده است؛ منطق شروع بازی و تقسیم نقش‌ها هنوز پیاده‌سازی نشده است.','error');
-}
+      return send(res, 401, {
+        ok: false,
+        error: 'توکن ورود کاربر ارسال نشده است.'
+      });
 
-/* LEAVE AND HOST HANDOVER */
-async function leaveRoom(silent=false){
- if(!currentRoom)return;
- const c=currentRoom,wasHost=host();
- stopRoomPolling();closeVoice();
- try{
-  const room=await roomByCode(c),all=await playersIn(c);
-  const me=all.find(p=>p.UserId===userId);
-  if(me)await deletePlayer(me.$id);
-  const remaining=all.filter(p=>p.UserId!==userId);
-  if(room){
-   if(!remaining.length){
-    await db.deleteRow({databaseId:CFG.databaseId,tableId:CFG.rooms,rowId:room.$id});
-   }else if(wasHost){
-    const next=remaining[0];
-    // انتقال میزبان در یک تغییر رکورد اتاق ثبت می‌شود.
-    await updateRoom(room.$id,{hostId:next.UserId});
-    for(const p of remaining){
-     try{
-      await db.updateRow({databaseId:CFG.databaseId,tableId:CFG.players,rowId:p.$id,data:{isModerator:p.UserId===next.UserId,isReady:p.UserId===next.UserId?false:p.isReady}});
-     }catch(e){console.warn(e)}
     }
-   }
-  }
- }catch(e){console.warn('leave error',e)}
- currentRoom='';myPlayerRow='';currentHost='';myReady=false;
- screen('lobby');
- if(!silent){setStatus('joinStatus','از اتاق خارج شدی.','ok');await loadPublicRooms()}
-}
 
-/* PUBLIC ROOMS */
-async function loadPublicRooms(){
- if(!userId||loadingPublic||currentRoom)return;
- loadingPublic=true;
- try{
-  const list=await rows(CFG.rooms,[Query.equal('status','waiting')]);
-  const box=$('publicRooms');box.innerHTML='';
-  let count=0;
-  for(const room of list){
-   if(!room.roomcode)continue;
-   const people=await playersIn(room.roomcode).catch(()=>[]);
-   if(!people.length||people.length>=(Number(room.maxplayers)||10))continue;
-   count++;
-   const item=document.createElement('div');item.className='room-item';
-   item.innerHTML=`<div><strong>اتاق ${esc(room.roomcode)}</strong><small>${people.length} از ${Number(room.maxplayers)||10} بازیکن</small></div><button class="btn gold">ورود</button>`;
-   item.querySelector('button').onclick=async()=>{
-    try{await enterRoom(room.roomcode)}catch(e){alert('ورود ناموفق: '+e.message)}
-   };
-   box.appendChild(item);
-  }
-  if(!count)box.innerHTML='<div class="sub">اتاق عمومی فعالی وجود ندارد.</div>';
- }catch(e){$('publicRooms').textContent='خطا در دریافت اتاق‌ها: '+e.message}
- finally{loadingPublic=false}
-}
-function startPublicPolling(){
- stopPublicPolling();publicTimer=setInterval(()=>loadPublicRooms(),12000);
-}
-function stopPublicPolling(){
- if(publicTimer)clearInterval(publicTimer);publicTimer=null;
-}
+    const body = req.bodyJson || {};
 
-/* POLLING */
-function startRoomPolling(){
- stopRoomPolling();
- roomTimer=setInterval(async()=>{
-  if(!currentRoom)return;
-  try{await refreshRoom()}catch(e){setStatus('roomStatusText',e.message,'error')}
- },4000);
- chatTimer=setInterval(()=>loadChat().catch(console.warn),4000);
- signalTimer=setInterval(()=>pollSignals().catch(console.warn),1500);
- peerTimer=setInterval(()=>syncPeers().catch(console.warn),6000);
-}
-function stopRoomPolling(){
- [roomTimer,chatTimer,signalTimer,peerTimer].forEach(t=>{if(t)clearInterval(t)});
- roomTimer=chatTimer=signalTimer=peerTimer=null;
-}
+    const action = String(body.action || '').trim();
 
-/* CHAT */
-async function createMessage(content,type='chat',target=''){
- return db.createRow({
-  databaseId:CFG.databaseId,tableId:CFG.messages,rowId:ID.unique(),
-  data:{
-   roomcode:currentRoom,userId,PlayerName:playerName,
-   content:String(content).slice(0,5000),phase:'lobby',
-   messageType:type,targetUserId:target,isRead:false
-  }
- });
-}
-async function sendChat(){
- if(!currentRoom||sendingChat)return;
- const input=$('chatInput'),msg=input.value.trim();if(!msg)return;
- sendingChat=true;
- try{await createMessage(msg,'chat');input.value='';await loadChat()}
- catch(e){setStatus('roomStatusText','ارسال پیام ناموفق: '+e.message,'error')}
- finally{sendingChat=false}
-}
-$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendChat()}});
-async function loadChat(){
- if(!currentRoom)return;
- const list=await rows(CFG.messages,[Query.equal('roomcode',currentRoom),Query.orderDesc('$createdAt')]);
- const chats=list.filter(m=>m.messageType==='chat').slice(0,60).reverse();
- const box=$('chatBox');
- box.innerHTML=chats.map(m=>{
-  const t=m.$createdAt?new Date(m.$createdAt).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'}):'';
-  return `<div class="chat-line"><b>${esc(m.PlayerName||'بازیکن')}:</b> ${esc(m.content)} <span class="time">${esc(t)}</span></div>`;
- }).join('')||'<div class="sub">هنوز پیامی ارسال نشده است.</div>';
- box.scrollTop=box.scrollHeight;
-}
+    const roomCode = String(
+      body.roomcode || ''
+    ).trim().toUpperCase();
 
-/* VOICE: WEBRTC */
-function peerFor(id){
- if(peers.has(id))return peers.get(id);
- const pc=new RTCPeerConnection({
-  iceServers:[
-   {urls:'stun:stun.l.google.com:19302'},
-   {urls:'stun:stun1.l.google.com:19302'}
-  ]
- });
- const entry={pc,remoteId:id,offerStarted:false};
- peers.set(id,entry);
- if(localStream)localStream.getTracks().forEach(track=>pc.addTrack(track,localStream));
- pc.onicecandidate=e=>{
-  if(e.candidate)sendSignal(id,{type:'candidate',candidate:e.candidate.toJSON()}).catch(console.warn);
- };
- pc.ontrack=e=>{
-  let audio=$('audio_'+id);
-  if(!audio){
-   audio=document.createElement('audio');audio.id='audio_'+id;
-   audio.autoplay=true;audio.playsInline=true;document.body.appendChild(audio);
-  }
-  audio.srcObject=e.streams[0];audio.play().catch(()=>{});
- };
- pc.onconnectionstatechange=()=>{
-  if(['failed','closed'].includes(pc.connectionState)){
-   try{pc.close()}catch(_){}
-   peers.delete(id);
-  }
- };
- return entry;
-}
-async function sendSignal(target,payload){
- if(!currentRoom)return;
- await createMessage(JSON.stringify(payload),'signal',target);
-}
-async function syncPeers(){
- if(!currentRoom)return;
- const people=await playersIn(currentRoom);
- const others=people.filter(p=>p.UserId!==userId);
- for(const p of others){
-  const id=p.UserId,entry=peerFor(id);
-  // فقط یکی از دو سمت offer را آغاز می‌کند.
-  if(userId.localeCompare(id)<0&&!entry.offerStarted){
-   entry.offerStarted=true;
-   try{
-    const offer=await entry.pc.createOffer();
-    await entry.pc.setLocalDescription(offer);
-    await sendSignal(id,{type:'offer',sdp:offer});
-   }catch(e){entry.offerStarted=false;console.warn('offer failed',e)}
-  }
- }
- for(const [id,entry] of peers){
-  if(!others.some(p=>p.UserId===id)){
-   try{entry.pc.close()}catch(_){}
-   peers.delete(id);$('audio_'+id)?.remove();
-  }
- }
-}
-async function handleSignal(from,payload){
- if(!from||from===userId)return;
- const entry=peerFor(from),pc=entry.pc;
- if(payload.type==='offer'){
-  await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-  const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
-  await sendSignal(from,{type:'answer',sdp:answer});
-  const queue=pendingCandidates.get(from)||[];
-  for(const c of queue){try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){}}
-  pendingCandidates.delete(from);
- }else if(payload.type==='answer'){
-  if(!pc.remoteDescription){
-   await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-   const queue=pendingCandidates.get(from)||[];
-   for(const c of queue){try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){}}
-   pendingCandidates.delete(from);
-  }
- }else if(payload.type==='candidate'){
-  if(pc.remoteDescription){
-   try{await pc.addIceCandidate(new RTCIceCandidate(payload.candidate))}catch(e){console.warn(e)}
-  }else{
-   if(!pendingCandidates.has(from))pendingCandidates.set(from,[]);
-   pendingCandidates.get(from).push(payload.candidate);
-  }
- }
-}
-async function pollSignals(){
- if(!currentRoom)return;
- const list=await rows(CFG.messages,[Query.equal('roomcode',currentRoom),Query.equal('messageType','signal'),Query.equal('targetUserId',userId),Query.orderAsc('$createdAt')]);
- for(const m of list){
-  if(processedSignals.has(m.$id))continue;
-  processedSignals.add(m.$id);
-  try{
-   await handleSignal(m.userId,JSON.parse(m.content));
-   await db.deleteRow({databaseId:CFG.databaseId,tableId:CFG.messages,rowId:m.$id});
-  }catch(e){console.warn('signal error',e)}
-  if(processedSignals.size>300)processedSignals.clear();
- }
-}
-async function enableMic(){
- if(!navigator.mediaDevices?.getUserMedia)throw new Error('میکروفون در این مرورگر یا صفحه فعال نیست. HTTPS لازم است.');
- if(!localStream){
-  localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-  localStream.getAudioTracks().forEach(t=>t.enabled=false);
- }
- // ترک میکروفون به اتصال‌های قبلی هم اضافه شود.
- for(const entry of peers.values()){
-  const senders=entry.pc.getSenders();
-  const audioSender=senders.find(s=>s.track?.kind==='audio');
-  const track=localStream.getAudioTracks()[0];
-  if(track&&!audioSender)entry.pc.addTrack(track,localStream);
- }
- await syncPeers();
-}
-function pttDown(e){
- e.preventDefault();
- enableMic().then(()=>{
-  localStream.getAudioTracks().forEach(t=>t.enabled=true);
-  $('pttButton').classList.add('active');
-  $('pttButton').textContent='🔴 در حال صحبت...';
-  $('voiceStatus').textContent='صدای شما فعال است';
- }).catch(e=>{$('voiceStatus').textContent=e.message});
-}
-function pttUp(e){
- if(e)e.preventDefault();
- if(localStream)localStream.getAudioTracks().forEach(t=>t.enabled=false);
- $('pttButton').classList.remove('active');
- $('pttButton').textContent='🎙 نگه دار و صحبت کن';
- $('voiceStatus').textContent='میکروفون خاموش است';
-}
-function closeVoice(){
- pttUp();
- if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}
- for(const [id,p] of peers){try{p.pc.close()}catch(_){}$('audio_'+id)?.remove()}
- peers.clear();pendingCandidates.clear();processedSignals.clear();
-}
-$('pttButton').addEventListener('pointerdown',pttDown);
-$('pttButton').addEventListener('pointerup',pttUp);
-$('pttButton').addEventListener('pointerleave',pttUp);
-$('pttButton').addEventListener('pointercancel',pttUp);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)pttUp()});
+    if (!roomCode) {
 
-/* INITIAL */
-(async()=>{
- readProfile();
- const u=await authGet();
- if(u){
-  userId=u.$id;
-  // برای نشست موجود، نام ذخیره‌شده را بازیابی می‌کنیم.
-  try{
-   const p=JSON.parse(localStorage.getItem('mm_profile')||'{}');
-   if(p.name){playerName=p.name;await afterLogin()}
-  }catch(e){}
- }
-})();
-</script>
-</body>
-</html>
+      return send(res, 400, {
+        ok: false,
+        error: 'کد اتاق وارد نشده است.'
+      });
+
+    }
+
+    const { user, tables } =
+      await createClients(jwt);
+
+    // ===============================
+    // FIND ROOM
+    // ===============================
+
+    const roomMatches = await listRows(
+      tables,
+      TABLES.rooms,
+      [
+        Query.equal('roomcode', roomCode),
+        Query.limit(1)
+      ]
+    );
+
+    const room = roomMatches[0];
+
+    if (!room) {
+
+      return send(res, 404, {
+        ok: false,
+        error: 'اتاق پیدا نشد.'
+      });
+
+    }
+
+    // ===============================
+    // START GAME
+    // ===============================
+
+    if (action === 'startGame') {
+
+      // HOST CHECK
+
+      if (room.hostId !== user.$id) {
+
+        return send(res, 403, {
+          ok: false,
+          error: 'فقط میزبان می‌تواند بازی را شروع کند.'
+        });
+
+      }
+
+      // STATUS CHECK
+
+      if (room.status !== 'waiting') {
+
+        return send(res, 409, {
+          ok: false,
+          error: 'اتاق در وضعیت انتظار نیست.'
+        });
+
+      }
+
+      // GET PLAYERS
+
+      const players = await listRows(
+        tables,
+        TABLES.players,
+        [
+          Query.equal('roomcode', roomCode),
+          Query.limit(100)
+        ]
+      );
+
+      if (players.length < 4) {
+
+        return send(res, 400, {
+          ok: false,
+          error: 'حداقل ۴ بازیکن لازم است.'
+        });
+
+      }
+
+      if (
+        players.length >
+        Number(room.maxplayers || 12)
+      ) {
+
+        return send(res, 400, {
+          ok: false,
+          error: 'ظرفیت اتاق تکمیل شده است.'
+        });
+
+      }
+
+      // READY CHECK
+
+      if (
+        players.some(
+          player => player.isReady !== true
+        )
+      ) {
+
+        return send(res, 400, {
+          ok: false,
+          error: 'همه بازیکنان باید آماده باشند.'
+        });
+
+      }
+
+      // DUPLICATE CHECK
+
+      const userIds = players.map(
+        player => player.UserId
+      );
+
+      if (
+        userIds.some(id => !id) ||
+        new Set(userIds).size !== players.length
+      ) {
+
+        return send(res, 409, {
+          ok: false,
+          error: 'بازیکن تکراری یا شناسه نامعتبر وجود دارد.'
+        });
+
+      }
+
+      // SET STARTING STATUS
+
+      await updateRoom(
+        tables,
+        room.$id,
+        {
+          status: 'starting'
+        }
+      );
+
+      const createdRoleIds = [];
+
+      try {
+
+        // DELETE OLD ROLES
+
+        const oldRoles = await listRows(
+          tables,
+          TABLES.roles,
+          [
+            Query.equal('roomcode', roomCode),
+            Query.limit(100)
+          ]
+        );
+
+        await deleteRoles(tables, oldRoles);
+
+        // CREATE NEW ROLES
+
+        const assignedRoles = makeRoleList(
+          players.length,
+          room.scenario || 'classic'
+        );
+
+        for (
+          let i = 0;
+          i < players.length;
+          i++
+        ) {
+
+          const roleId = ID.unique();
+
+          await tables.createRow({
+            databaseId: DATABASE_ID,
+            tableId: TABLES.roles,
+            rowId: roleId,
+
+            data: {
+              roomcode: roomCode,
+              userId: players[i].UserId,
+              role: assignedRoles[i],
+              isRevealed: false
+            }
+
+          });
+
+          createdRoleIds.push(roleId);
+
+        }
+
+        // ACTIVATE GAME
+
+        await updateRoom(
+          tables,
+          room.$id,
+          {
+            status: 'active',
+            currentphase: 'night',
+            phaseStartedAt: new Date().toISOString(),
+            winner: ''
+          }
+        );
+
+        log(
+          `Game started: ${roomCode}`
+        );
+
+        return send(res, 200, {
+
+          ok: true,
+
+          message:
+            'بازی با موفقیت شروع شد.',
+
+          playerCount: players.length
+
+        });
+
+      } catch (startError) {
+
+        // REMOVE PARTIAL ROLE ASSIGNMENTS
+
+        for (const roleId of createdRoleIds) {
+
+          try {
+
+            await tables.deleteRow({
+              databaseId: DATABASE_ID,
+              tableId: TABLES.roles,
+              rowId: roleId
+            });
+
+          } catch (cleanupError) {
+
+            error(
+              String(cleanupError)
+            );
+
+          }
+
+        }
+
+        // RESTORE WAITING STATUS
+
+        try {
+
+          await updateRoom(
+            tables,
+            room.$id,
+            {
+              status: 'waiting'
+            }
+          );
+
+        } catch (rollbackError) {
+
+          error(
+            String(rollbackError)
+          );
+
+        }
+
+        throw startError;
+
+      }
+
+    }
+
+    // ===============================
+    // GET MY ROLE
+    // ===============================
+
+    if (action === 'myRole') {
+
+      const players = await listRows(
+        tables,
+        TABLES.players,
+        [
+          Query.equal('roomcode', roomCode),
+          Query.equal('UserId', user.$id),
+          Query.limit(1)
+        ]
+      );
+
+      if (!players.length) {
+
+        return send(res, 403, {
+          ok: false,
+          error: 'شما عضو این اتاق نیستید.'
+        });
+
+      }
+
+      const roles = await listRows(
+        tables,
+        TABLES.roles,
+        [
+          Query.equal('roomcode', roomCode),
+          Query.equal('userId', user.$id),
+          Query.limit(1)
+        ]
+      );
+
+      if (!roles.length) {
+
+        return send(res, 404, {
+          ok: false,
+          error: 'نقش شما هنوز تعیین نشده است.'
+        });
+
+      }
+
+      return send(res, 200, {
+
+        ok: true,
+
+        role: roles[0].role
+
+      });
+
+    }
+
+    // ===============================
+    // MODERATOR ROLES
+    // ===============================
+
+    if (action === 'moderatorRoles') {
+
+      const authorized =
+        room.hostId === user.$id ||
+        room.assistantModeratorId === user.$id;
+
+      if (!authorized) {
+
+        return send(res, 403, {
+          ok: false,
+          error: 'شما اجازه مشاهده نقش‌ها را ندارید.'
+        });
+
+      }
+
+      const roles = await listRows(
+        tables,
+        TABLES.roles,
+        [
+          Query.equal('roomcode', roomCode),
+          Query.limit(100)
+        ]
+      );
+
+      return send(res, 200, {
+
+        ok: true,
+
+        roles: roles.map(row => ({
+
+          userId: row.userId,
+
+          role: row.role
+
+        }))
+
+      });
+
+    }
+
+    // ===============================
+    // INVALID ACTION
+    // ===============================
+
+    return send(res, 400, {
+
+      ok: false,
+
+      error: 'عملیات نامعتبر است.'
+
+    });
+
+  } catch (err) {
+
+    error(
+      err?.stack || String(err)
+    );
+
+    return send(res, 500, {
+
+      ok: false,
+
+      error: 'خطای داخلی تابع.',
+
+      details: err?.message || String(err)
+
+    });
+
+  }
+
+};
